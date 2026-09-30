@@ -389,11 +389,15 @@ describe('llmProvider', () => {
       expect(result).toEqual({ available: false, reason: 'auth_required' });
     });
 
-    it('checks built-in model via bridge.llm.llmCheckModel', async () => {
-      mockBridge.llm.llmCheckModel.mockResolvedValue({ downloaded: true });
+    it('checks the selected built-in model even when the default model is missing', async () => {
+      const builtinModel = 'gemma-4-E4B_q4_0-it.gguf';
+      mockBridge.llm.llmCheckModel.mockImplementation(async (modelFile?: string) => ({
+        downloaded: modelFile === builtinModel,
+      }));
       const { checkAvailability } = await import('./llmProvider');
-      const result = await checkAvailability(makeSettings({ llmProvider: 'builtin' }));
+      const result = await checkAvailability(makeSettings({ llmProvider: 'builtin', builtinModel }));
       expect(mockBridge.llm.llmCheckModel).toHaveBeenCalledOnce();
+      expect(mockBridge.llm.llmCheckModel).toHaveBeenCalledWith(builtinModel);
       expect(result).toEqual({ available: true });
     });
 

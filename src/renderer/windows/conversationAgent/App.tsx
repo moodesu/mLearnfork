@@ -791,6 +791,7 @@ export const ConversationContent: Component = () => {
   createEffect(() => {
     // Track reactive dependencies so the effect re-runs on change
     const provider = settings.llmProvider;
+    const builtinModel = settings.builtinModel;
     void settings.ollamaUrl;
     void settings.ollamaModel;
     void settings.cloudAuthAccessToken;
@@ -821,7 +822,7 @@ export const ConversationContent: Component = () => {
           const connected = await getBridge().llm.ollamaCheck();
           setIsConnected(connected ?? false);
         } else {
-          const status = await getBridge().llm.llmCheckModel();
+          const status = await getBridge().llm.llmCheckModel(builtinModel || undefined);
           setIsConnected(status?.downloaded ?? false);
         }
       } catch (e) {
