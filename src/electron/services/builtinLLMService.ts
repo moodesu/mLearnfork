@@ -17,6 +17,7 @@ const log = getLogger('electron.builtinLLMService');
 
 const MODEL_DIR_NAME = 'models';
 const IDLE_UNLOAD_MS = 10 * 60 * 1000; // 10 minutes
+const BUILTIN_CONTEXT_SIZE = 8192;
 
 // Dynamic imports for node-llama-cpp (ESM module in CJS context)
 let llamaCppModule: typeof import('node-llama-cpp') | null = null;
@@ -129,8 +130,12 @@ async function ensureModelLoaded(modelFile?: string): Promise<void> {
     llamaInstance = await llamaCpp.getLlama();
   }
 
+  const loadStart = Date.now();
+  log.info('Loading built-in model', { modelFile: path.basename(modelPath), gpu: llamaInstance.gpu });
   loadedModel = await llamaInstance.loadModel({ modelPath });
-  modelContext = await loadedModel.createContext();
+  log.info('Built-in model loaded', { elapsedMs: Date.now() - loadStart });
+  modelContext = await loadedModel.createContext({ contextSize: BUILTIN_CONTEXT_SIZE });
+  log.info('Built-in context ready', { contextSize: BUILTIN_CONTEXT_SIZE, elapsedMs: Date.now() - loadStart });
 
   resetIdleTimer();
 }
@@ -260,7 +265,9 @@ async function streamChat(
       temperature: 0.3,
     };
 
+    log.info('Built-in prompt evaluation started');
     const response = await session.prompt(lastUserMsg.content, promptOptions);
+    log.info('Built-in prompt completed', { elapsedMs: Date.now() - startTime, tokenCount });
 
     if (tokenCount === 0 && response) {
       // node-llama-cpp may suppress onTextChunk for think-tag content;

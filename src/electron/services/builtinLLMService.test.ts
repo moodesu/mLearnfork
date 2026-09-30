@@ -291,6 +291,7 @@ describe('builtinStreamChat', () => {
     const contentCalls = sender.send.mock.calls.filter(
       c => c[0] === 'llm-stream-chunk' && c[1]?.content,
     );
+    expect(mockModelCreateContext).toHaveBeenCalledWith({ contextSize: 8192 });
     expect(contentCalls.length).toBeGreaterThan(0);
     expect(contentCalls[0][1].content).toBe('Hello!');
   });

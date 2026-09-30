@@ -2264,8 +2264,8 @@ describe('createConversationAgent', () => {
   // Timeout handling
   // ==========================================================================
 
-  describe('timeout (90 seconds)', () => {
-    it('calls onError with timeout message when no content arrives within 90s', async () => {
+  describe('response timeout', () => {
+    it('allows built-in cold startup beyond 90s and aborts inference at five minutes', async () => {
       vi.useFakeTimers();
 
       const agent = createConversationAgent(createMockDeps());
@@ -2274,6 +2274,9 @@ describe('createConversationAgent', () => {
       agent.processMessage('hello', [], callbacks);
 
       vi.advanceTimersByTime(90_000);
+      expect(onError).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(210_000);
+      expect(mockBridge.llm.llmStreamAbort).toHaveBeenCalled();
 
       expect(onError).toHaveBeenCalledWith('Response timed out');
 
@@ -2291,7 +2294,7 @@ describe('createConversationAgent', () => {
       agent.processMessage('hello', [], callbacks);
       sendChunk('Partial response');
 
-      await vi.advanceTimersByTimeAsync(90_000);
+      await vi.advanceTimersByTimeAsync(300_000);
 
       // onDone should be called with the partial content
       expect(onDone).toHaveBeenCalledWith(
