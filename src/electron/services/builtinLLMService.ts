@@ -191,7 +191,7 @@ async function streamChat(
   // The last message should be the user prompt
   const lastUserMsg = conversationMessages[conversationMessages.length - 1];
   if (!lastUserMsg || lastUserMsg.role !== 'user') {
-    session.dispose?.();
+    session.dispose({ disposeSequence: true });
     throw new Error('No user message found');
   }
 
@@ -303,7 +303,7 @@ async function streamChat(
   } finally {
     currentAbortController = null;
     resetIdleTimer();
-    session.dispose?.();
+    session.dispose({ disposeSequence: true });
   }
 }
 

@@ -461,7 +461,16 @@ describe('builtinStreamChat', () => {
     ).rejects.toThrow('No user message found');
   });
 
-  it('reuses loaded model on second call', async () => {
+  it('releases the sequence so a second request can reuse the loaded model', async () => {
+    let sequenceInUse = false;
+    mockContextGetSequence.mockImplementation(() => {
+      if (sequenceInUse) throw new Error('No sequences left');
+      sequenceInUse = true;
+      return {};
+    });
+    mockSessionDispose.mockImplementation((options?: { disposeSequence?: boolean }) => {
+      if (options?.disposeSequence) sequenceInUse = false;
+    });
     mockExistsSync.mockReturnValue(true);
     const sender = createMockSender();
 
@@ -470,6 +479,10 @@ describe('builtinStreamChat', () => {
 
     expect(mockGetLlama).toHaveBeenCalledTimes(1);
     expect(mockLoadModel).toHaveBeenCalledTimes(1);
+    expect(sequenceInUse).toBe(false);
+    expect(mockSessionDispose).toHaveBeenCalledWith({ disposeSequence: true });
+    mockContextGetSequence.mockImplementation(() => ({}));
+    mockSessionDispose.mockReset();
   });
 });
 
