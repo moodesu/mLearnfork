@@ -390,7 +390,7 @@ export async function checkAvailability(settings: Settings): Promise<{ available
 
   // Built-in: check if model is downloaded
   try {
-    const status = await bridge.llm.llmCheckModel();
+    const status = await bridge.llm.llmCheckModel(settings.builtinModel || undefined);
     if (!status.downloaded) {
       return { available: false, reason: 'model_not_downloaded' };
     }
