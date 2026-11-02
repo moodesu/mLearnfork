@@ -44,7 +44,10 @@ body.platform-windows select {
   background-size: 0.9rem;
 }
 
-body.platform-windows select option {
+/* Native option popups need an explicit, opaque theme background on Linux too.
+   Otherwise light OS menus can inherit the dark theme's pale option text. */
+select option,
+select optgroup {
   color: var(--text-primary);
-  background-color: var(--bg-intense);
+  background-color: var(--bg-opaque);
 }
