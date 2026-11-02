@@ -16,6 +16,16 @@ import { getLogger } from '../../shared/utils/logger';
 
 const log = getLogger('electron.llmRouter');
 
+/** Guard against sending to a destroyed webContents (throws "Object has been destroyed"). */
+function safeSend(sender: Electron.WebContents, channel: string, payload: unknown): void {
+  if (!sender || sender.isDestroyed()) return;
+  try {
+    sender.send(channel, payload);
+  } catch {
+    // renderer destroyed mid-send — ignore
+  }
+}
+
 let cloudAdapter: CloudLLMAdapter | null = null;
 
 function getCloudAdapter(): CloudLLMAdapter {
@@ -42,14 +52,16 @@ export function setupLLMRouterIPC(): void {
     const provider = settings.llmProvider || DEFAULT_SETTINGS.llmProvider;
 
     try {
-      if (provider === 'cloud') {
+      if (provider === 'manual') {
+        safeSend(event.sender, IPC_CHANNELS.LLM_STREAM_CHUNK, { error: 'Manual AI uses copy and paste in the Explain popup.', done: true });
+      } else if (provider === 'cloud') {
         const adapter = getCloudAdapter();
         await adapter.streamChat(messages, tools || [], {
-          onChunk: (chunk) => event.sender.send(IPC_CHANNELS.LLM_STREAM_CHUNK, chunk),
+          onChunk: (chunk) => safeSend(event.sender, IPC_CHANNELS.LLM_STREAM_CHUNK, chunk),
           onDone: () => {},
           onError: (error) => {
             const errorChunk: LLMStreamChunk = { error, done: true };
-            event.sender.send(IPC_CHANNELS.LLM_STREAM_CHUNK, errorChunk);
+            safeSend(event.sender, IPC_CHANNELS.LLM_STREAM_CHUNK, errorChunk);
           },
         }, tier === 'fast' || tier === 'cheap' ? tier : undefined, think);
       } else if (provider === 'ollama') {
@@ -63,7 +75,7 @@ export function setupLLMRouterIPC(): void {
         error: (err as Error).message || 'Failed to start LLM stream',
         done: true,
       };
-      event.sender.send(IPC_CHANNELS.LLM_STREAM_CHUNK, errorChunk);
+      safeSend(event.sender, IPC_CHANNELS.LLM_STREAM_CHUNK, errorChunk);
     }
   });
 
@@ -72,6 +84,7 @@ export function setupLLMRouterIPC(): void {
     const settings = loadSettings();
     const provider = settings.llmProvider || DEFAULT_SETTINGS.llmProvider;
 
+    if (provider === 'manual') return;
     if (provider === 'cloud') {
       cloudAdapter?.abort();
     } else if (provider === 'ollama') {

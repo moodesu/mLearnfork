@@ -25,6 +25,7 @@ import { clipVideo } from '../../services/videoClipService';
 import { getBridge } from '../../../shared/bridges';
 import { showToast } from '../common/Feedback/Toast';
 import { getTokenLookupWord, getTokenWordFormCandidates } from '../../utils/wordForms';
+import { sentenceFrameTime } from '../../utils/mpvTranscript';
 import { getDictionaryTargetLanguageForSettings } from '../../utils/dictionaryTargetLanguage';
 import { extractReadingValue } from '../../utils/translationCacheParsers';
 import { getFrequencyLevelVisualRank } from '../../../shared/languageFeatures';
@@ -79,6 +80,9 @@ export interface WordHoverProps {
   /** Video source URL (for video clip flashcards) */
   videoSrc?: string;
   lastScreenshot?: string;
+  nativeSource?: string;
+  /** Render in normal document flow within the caller's study panel. */
+  contained?: boolean;
 }
 
 export const WordHover: Component<WordHoverProps> = (props) => {
@@ -279,7 +283,7 @@ export const WordHover: Component<WordHoverProps> = (props) => {
     void props.translationData;
     void props.dictionaryEntries;
     
-    if (!visible || !subtitleHoverRef) return;
+    if (props.contained || !visible || !subtitleHoverRef) return;
 
     requestAnimationFrame(() => {
       const { width, height } = getHoverDimensions();
@@ -290,7 +294,7 @@ export const WordHover: Component<WordHoverProps> = (props) => {
 
   createEffect(() => {
     const visible = isShown();
-    if (!visible || !subtitleHoverRef) return;
+    if (props.contained || !visible || !subtitleHoverRef) return;
 
     const ro = new ResizeObserver(() => {
       const { width, height } = getHoverDimensions();
@@ -312,6 +316,7 @@ export const WordHover: Component<WordHoverProps> = (props) => {
   });
 
   const hoverStyle = createMemo((): JSX.CSSProperties => {
+    if (props.contained) return {};
     const pos = computedPosition();
 
     return {
@@ -354,6 +359,11 @@ export const WordHover: Component<WordHoverProps> = (props) => {
     } else {
       try {
         const freq = wordFreqEntry();
+        // Snapshot the cue before asynchronous capture/tokenization can advance the UI.
+        const nativeCue = props.nativeSource ? { path: props.nativeSource, text: props.contextPhrase,
+          start: props.subtitleStart, end: props.subtitleEnd } : null;
+        const nativeTime = nativeCue ? sentenceFrameTime(nativeCue.start, nativeCue.end) : undefined;
+        if (nativeCue && nativeTime === undefined) throw new Error('Select a timed subtitle before creating a card');
         const isVideoMode = settings.flashcardMediaType === 'video' && !!props.videoSrc;
         const { content, ease } = await buildWordHoverFlashcardContent({
           token: props.token,
@@ -375,7 +385,16 @@ export const WordHover: Component<WordHoverProps> = (props) => {
           srsLearningEase: settings.srsLearningThreshold / 1000,
           srsKnownEase: settings.known_ease_threshold / 1000,
           screenshotDataUrl: props.lastScreenshot,
+          useContextPhrase: !!nativeCue,
+          nativeTime,
         });
+
+        if (nativeCue) {
+          content.context = nativeCue.text;
+          content.source = nativeCue.path;
+          content.extra = { sourcePath: nativeCue.path, subtitleStart: nativeCue.start,
+            subtitleEnd: nativeCue.end, screenshotTime: nativeTime };
+        }
 
         // If video mode, clip and save the video segment
         if (isVideoMode && props.videoSrc && props.subtitleStart != null && props.subtitleEnd != null) {
@@ -602,6 +621,7 @@ export const WordHover: Component<WordHoverProps> = (props) => {
   return (
     <div
       class="word-hover-container"
+      classList={{ 'word-hover-contained': props.contained === true, 'word-hover-contained-hidden': props.contained === true && !isShown() }}
       style={hoverStyle()}
       ref={hoverRef}
     >

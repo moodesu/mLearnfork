@@ -1,9 +1,10 @@
 import type { LLMToolCall } from '../../../shared/types';
+import type { ParsedExplainer, ExplainerSection, GrammarPoint, WordReadingPart } from './ExplainerCards';
 
 type ExplainerOutputMode = 'word' | 'phrase';
 
 const REQUIRED_EXPLAINER_TOOLS_BY_MODE: Record<ExplainerOutputMode, string[]> = {
-  word: ['show_translation', 'show_explanation', 'show_grammar_points'],
+  word: ['show_explanation'],
   phrase: ['show_translation', 'show_grammar_points'],
 };
 
@@ -56,7 +57,8 @@ function hasRenderableExplainerToolCall(toolCall: LLMToolCall): boolean {
     case 'show_translation':
       return typeof args.translation === 'string' && args.translation.trim().length > 0;
     case 'show_explanation':
-      return typeof args.explanation === 'string' && args.explanation.trim().length > 0;
+      return typeof args.explanation === 'string' && args.explanation.trim().length > 0
+        && typeof args.context_explanation === 'string' && args.context_explanation.trim().length > 0;
     case 'show_grammar_points':
       return Array.isArray(args.points) && args.points.some((point) => {
         const candidate = point as { description?: unknown };
@@ -98,4 +100,60 @@ export function hasCompleteExplainerGenerationOutput(
 ): boolean {
   const hasRawFallback = finalContent.trim().length > 0 && toolCalls.length === 0;
   return hasRawFallback || hasCompleteStructuredExplainerOutput(toolCalls, mode);
+}
+
+/**
+ * Convert accumulated tool calls into the ParsedExplainer shape
+ * that ExplainerCards already understands.
+ */
+export function toolCallsToParsedExplainer(toolCalls: LLMToolCall[], rawText: string, t: (key: string) => string): ParsedExplainer {
+  const sections: ExplainerSection[] = [];
+  const latestByName = new Map<string, LLMToolCall>();
+
+  for (const toolCall of toolCalls) {
+    latestByName.set(toolCall.name, toolCall);
+  }
+
+  const translationCall = latestByName.get('show_translation');
+  if (translationCall) {
+    const args = translationCall.arguments as Record<string, unknown>;
+    sections.push({
+      type: 'translation',
+      content: (args.translation as string) ?? '',
+    });
+  }
+
+  const explanationCall = latestByName.get('show_explanation');
+  if (explanationCall) {
+    const args = explanationCall.arguments as Record<string, unknown>;
+    sections.push({
+      type: 'explanation',
+      title: t('mlearn.Explainer.Meaning'),
+      word: args.word as string | undefined,
+      content: (args.explanation as string) ?? '',
+    });
+    sections.push({
+      type: 'explanation',
+      title: t('mlearn.Explainer.InThisSentence'),
+      word: args.word as string | undefined,
+      content: (args.context_explanation as string) ?? '',
+    });
+  }
+
+  const grammarCall = latestByName.get('show_grammar_points');
+  if (grammarCall) {
+    const args = grammarCall.arguments as Record<string, unknown>;
+    sections.push({
+      type: 'grammar',
+      grammarPoints: (args.points as GrammarPoint[]) ?? [],
+    });
+  }
+
+  const args = explanationCall?.arguments as Record<string, unknown> | undefined;
+  const parts = args?.reading_parts;
+  const validParts = Array.isArray(parts) && parts.length > 0 && parts.every((part) =>
+    part != null && typeof part.text === 'string' && typeof part.reading === 'string');
+  const wordReadingParts = validParts && parts.map((part) => part.text).join('') === args?.word
+    ? parts as WordReadingPart[] : undefined;
+  return { sections, rawText: rawText || undefined, wordReadingParts };
 }

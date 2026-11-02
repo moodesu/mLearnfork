@@ -9,6 +9,22 @@ const mockParseSubtitle = vi.fn((text: string) => ({
 const mockShouldRemoveParentheticalContent = vi.fn((language: string) => language === 'ja');
 const mockStripSpeakerNamePrefixes = vi.fn((text: string) => text);
 
+describe('native active subtitles', () => {
+  it('tokenizes the supplied active cue and clears it on a gap', async () => {
+    let subtitles!: ReturnType<typeof useSubtitles>;
+    const dispose = createRoot(dispose => { subtitles = useSubtitles(); return dispose; });
+    try {
+      subtitles.loadLiveSubtitle({ text: 'Native sentence', start: 173, end: 175 });
+      await Promise.resolve();
+      expect(subtitles.currentSubtitle()?.text).toBe('Native sentence');
+      expect(mockTokenize).toHaveBeenCalledWith('Native sentence');
+      subtitles.loadLiveSubtitle(null);
+      expect(subtitles.currentSubtitle()).toBeNull();
+      expect(subtitles.tokens()).toEqual([]);
+    } finally { dispose(); }
+  });
+});
+
 vi.mock('../context', () => ({
   useSettings: vi.fn(() => ({
     settings: { language: 'ja', subsOffsetTime: 0 },

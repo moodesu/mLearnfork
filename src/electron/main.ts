@@ -2,7 +2,7 @@
  * Electron Main Process Entry Point
  */
 
-import { app, ipcMain, clipboard, shell } from 'electron';
+import { app, ipcMain, clipboard, shell, dialog } from 'electron';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
@@ -14,11 +14,14 @@ import { setupFlashcardTtsIPC, registerFlashcardAudioScheme, setupFlashcardAudio
 import { setupFlashcardVideoIPC, registerFlashcardVideoScheme, setupFlashcardVideoProtocol } from './services/flashcardVideoStorage';
 import { hasExistingProfile, setupSettingsIPC } from './services/settings';
 import { setupLoggingService } from './services/loggingService';
+import { StartupWindowGuard } from './services/startupWindowGuard';
 import { setupLocalizationIPC } from './services/localization';
 import { setupWindowIPC, createMainWindow, createWelcomeWindow, createDiagnosticsWindow } from './services/windowManager';
 import { initOverlaySiteState, registerOverlaySiteStateIPC } from './services/overlaySiteState';
 import { getExtensionDistDir } from './utils/platform';
 import { setupFileOperationsIPC } from './services/fileOperations';
+import { setupMpvIPC } from './services/mpvService';
+import { CUSTOM_APP_NAME, assertPortAvailable } from './services/customProfile';
 import { setupMigrationIPC, migrateLocalStorage } from './services/localStorageMigration';
 import { registerLocalMediaScheme, registerPluginUiScheme, setupLocalMediaProtocol, setupPluginUiProtocol } from './services/localMediaProtocol';
 import { setupMediaStatsIPC } from './services/mediaStatsStorage';
@@ -36,11 +39,12 @@ import { setupPluginIPC } from './services/pluginIPC';
 import { setupDiagnosticsIPC } from './services/diagnostics';
 import { createAppUpdaterService, setupAppUpdaterIpc, type AppUpdaterService } from './services/appUpdater';
 import { createTray, destroyTray } from './services/trayManager';
-import { IPC_CHANNELS } from '../shared/constants';
+import { IPC_CHANNELS, PYTHON_BACKEND_PORT, PROXY_SERVER_PORT } from '../shared/constants';
 import { setupKillHandlers } from './services/processManager';
 import { getLogger } from '../shared/utils/logger';
 
 const log = getLogger('electron.main');
+const startupWindowGuard = new StartupWindowGuard();
 let appWindowCreationPromise: Promise<void> | null = null;
 let appUpdaterService: AppUpdaterService | null = null;
 
@@ -228,7 +232,7 @@ function setupBaseIPC(): void {
   });
 
   ipcMain.on(IPC_CHANNELS.SHOW_CONTACT, () => {
-    shell.openExternal('https://mlearn.kikan.net/');
+    shell.openExternal('https://github.com/moodesu/mLearnfork');
   });
 
   ipcMain.handle(IPC_CHANNELS.OPEN_EXTERNAL_URL, async (_event, url: string) => {
@@ -298,6 +302,7 @@ function setupAllIPC(): void {
   setupPluginUiProtocol();
   setupPythonBackendIPC();
   setupFileOperationsIPC();
+  setupMpvIPC();
   setupMigrationIPC();
   setupMediaStatsIPC();
   setupOllamaIPC();
@@ -312,7 +317,11 @@ function setupAllIPC(): void {
   setupPluginIPC();
   setupDiagnosticsIPC();
   setupKillHandlers();
-  appUpdaterService = createAppUpdaterService();
+  // Custom builds must never download/install an upstream release over themselves.
+  appUpdaterService = createAppUpdaterService(app.getName() === CUSTOM_APP_NAME ? {
+    isPackaged: () => false,
+    fetchMetadata: async () => { throw new Error('Upstream updates are disabled for Sora 空'); },
+  } : {});
   setupAppUpdaterIpc(appUpdaterService);
 }
 
@@ -356,6 +365,15 @@ async function createAppWindows(): Promise<void> {
 
 // Main initialization
 async function initialize(): Promise<void> {
+  if (app.getName() === CUSTOM_APP_NAME) {
+    try {
+      await Promise.all([assertPortAvailable(PYTHON_BACKEND_PORT), assertPortAvailable(PROXY_SERVER_PORT)]);
+    } catch (error) {
+      dialog.showErrorBox(CUSTOM_APP_NAME, String(error));
+      app.quit();
+      return;
+    }
+  }
   await raiseFileDescriptorLimits();
 
   setupAllIPC();
@@ -369,7 +387,7 @@ async function initialize(): Promise<void> {
 
   // Perform localStorage migration before creating windows
   // This migrates data from the old app's file:// localStorage to file-based storage
-  await migrateLocalStorage();
+  await startupWindowGuard.during(migrateLocalStorage);
 
   // Create windows and start services
   await createAppWindows();
@@ -380,7 +398,7 @@ async function initialize(): Promise<void> {
     createTray(mainWindow);
   }
 
-  if (app.isPackaged && !app.isDefaultProtocolClient('mlearn')) {
+  if (app.getName() !== CUSTOM_APP_NAME && app.isPackaged && !app.isDefaultProtocolClient('mlearn')) {
     if (process.defaultApp && process.argv.length >= 2) {
       app.setAsDefaultProtocolClient('mlearn', process.execPath, [path.resolve(process.argv[1])]);
     } else {
@@ -388,7 +406,7 @@ async function initialize(): Promise<void> {
     }
   }
 
-  void appUpdaterService?.initialize({ autoCheck: app.isPackaged }).catch((error) => {
+  void appUpdaterService?.initialize({ autoCheck: app.isPackaged && app.getName() !== CUSTOM_APP_NAME }).catch((error) => {
     log.error('Automatic update initialization failed', error);
   });
 }
@@ -438,6 +456,7 @@ app.on('quit', () => {
 });
 
 app.on('window-all-closed', () => {
+  if (startupWindowGuard.active) return;
   if (process.platform !== 'darwin') {
     const { hasTray } = require('./services/trayManager');
     if (hasTray()) {

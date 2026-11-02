@@ -28,7 +28,13 @@ export interface ExplainerSection {
   grammarPoints?: GrammarPoint[];
 }
 
+export interface WordReadingPart {
+  text: string;
+  reading: string;
+}
+
 export interface ParsedExplainer {
+  wordReadingParts?: WordReadingPart[];
   sections: ExplainerSection[];
   rawText?: string;
 }
@@ -206,6 +212,15 @@ export const ExplainerCards: Component<ExplainerCardsProps> = (props) => {
   
   return (
     <div class="explainer-cards">
+      <Show when={props.data.wordReadingParts?.length}>
+        <div class="explainer-word-reading">
+          <For each={props.data.wordReadingParts}>
+            {(part) => <Show when={part.reading} fallback={<span>{part.text}</span>}>
+              <ruby>{part.text}<rt>{part.reading}</rt></ruby>
+            </Show>}
+          </For>
+        </div>
+      </Show>
       <Show when={props.loading}>
         <div class="explainer-cards__loading">
           <Spinner size={32} shape="square" />

@@ -420,7 +420,7 @@ describe('WelcomeApp', () => {
 
     expect(installLanguageDataMock).toHaveBeenCalledWith('ja', 'en', {
       includeLLM: false,
-      includeOCR: true,
+      includeOCR: false,
       includeVoice: false,
     });
 
@@ -559,9 +559,9 @@ describe('WelcomeApp', () => {
 
     continueButton?.click();
     expect(installLanguageDataMock).toHaveBeenCalledWith('ja', 'de', {
-      includeLLM: true,
-      includeOCR: true,
-      includeVoice: true,
+      includeLLM: false,
+      includeOCR: false,
+      includeVoice: false,
     });
     expect(installLanguageDataMock).not.toHaveBeenCalledWith('ja', 'en');
 
@@ -590,9 +590,9 @@ describe('WelcomeApp', () => {
     continueButton?.click();
 
     expect(installLanguageDataMock).toHaveBeenCalledWith('de', 'en', {
-      includeLLM: true,
-      includeOCR: true,
-      includeVoice: true,
+      includeLLM: false,
+      includeOCR: false,
+      includeVoice: false,
     });
     expect(installLanguageDataMock).not.toHaveBeenCalledWith('ja');
     expect(updateSettingsMock).not.toHaveBeenCalled();

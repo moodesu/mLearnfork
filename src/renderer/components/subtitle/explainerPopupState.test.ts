@@ -3,6 +3,7 @@ import type { LLMToolCall } from '../../../shared/types';
 import {
   hasCompleteExplainerGenerationOutput,
   hasCompleteStructuredExplainerOutput,
+  toolCallsToParsedExplainer,
   hasExplainerGenerationOutput,
   isQuotaError,
   normalizeExplainerErrorMessage,
@@ -81,7 +82,8 @@ describe('explainerPopupState', () => {
         name: 'show_explanation',
         arguments: {
           word: 'つもり',
-          explanation: 'In this phrase, it marks intention.',
+          explanation: 'Intention or plan.',
+          context_explanation: 'In this phrase, it marks intention.',
         },
       },
     ])).toBe(true);
@@ -113,24 +115,12 @@ describe('explainerPopupState', () => {
         },
       },
     ];
-    const completeWordOutput: LLMToolCall[] = [
-      ...translationOnly,
-      {
-        id: 'tc-explanation',
-        name: 'show_explanation',
-        arguments: {
-          word: 'つもり',
-          explanation: 'In this phrase, it marks intention.',
-        },
-      },
-      {
-        id: 'tc-grammar',
-        name: 'show_grammar_points',
-        arguments: {
-          points: [{ term: 'つもり', description: 'A noun-like expression for intention or plan.' }],
-        },
-      },
-    ];
+    const completeWordOutput: LLMToolCall[] = [{
+      id: 'tc-explanation', name: 'show_explanation',
+      arguments: { word: 'つもり', explanation: 'Intention or plan.', context_explanation: 'Here the speaker denies intending the action.' },
+    }];
+    expect(hasCompleteStructuredExplainerOutput([{ ...completeWordOutput[0], arguments: { explanation: 'Intention.' } }], 'word')).toBe(false);
+    expect(hasCompleteStructuredExplainerOutput([{ ...completeWordOutput[0], arguments: { explanation: 'Intention.', context_explanation: ' ' } }], 'word')).toBe(false);
 
     expect(hasCompleteStructuredExplainerOutput(translationOnly, 'word')).toBe(false);
     expect(hasCompleteExplainerGenerationOutput('', translationOnly, 'word')).toBe(false);
@@ -168,5 +158,38 @@ describe('explainerPopupState', () => {
     expect(hasCompleteExplainerGenerationOutput('Plain explanation fallback.', [], 'word')).toBe(true);
     expect(hasCompleteExplainerGenerationOutput('show_explanation({"word":"hi"', translationOnly, 'word')).toBe(false);
     expect(hasExplainerGenerationOutput('show_explanation({"word":"hi"', translationOnly)).toBe(true);
+  });
+});
+
+
+describe('word explanation cards', () => {
+  it('renders general meaning before contextual meaning with separate labels', () => {
+    const parsed = toolCallsToParsedExplainer([{
+      id: 'explain', name: 'show_explanation',
+      arguments: { word: '周辺', explanation: 'Surrounding area or vicinity.', context_explanation: 'Here it refers to events around them.' },
+    }], '', (key) => key);
+    expect(parsed.sections).toEqual([
+      { type: 'explanation', title: 'mlearn.Explainer.Meaning', word: '周辺', content: 'Surrounding area or vicinity.' },
+      { type: 'explanation', title: 'mlearn.Explainer.InThisSentence', word: '周辺', content: 'Here it refers to events around them.' },
+    ]);
+  });
+});
+
+
+describe('word readings', () => {
+  it('keeps kanji readings separate from phonetic endings for ruby rendering', () => {
+    const parts = [{ text: '認', reading: 'みと' }, { text: 'め', reading: '' }];
+    const parsed = toolCallsToParsedExplainer([{ id: 'r', name: 'show_explanation', arguments: {
+      word: '認め', reading_parts: parts, explanation: 'To acknowledge.', context_explanation: 'Here it means accept.',
+    } }], '', (key) => key);
+    expect(parsed.wordReadingParts).toEqual(parts);
+  });
+
+  it('ignores malformed readings or segments that change the selected word', () => {
+    for (const parts of [[{ text: '別', reading: 'べつ' }], [{ text: '認め', reading: null }]]) {
+      expect(toolCallsToParsedExplainer([{ id: 'r', name: 'show_explanation', arguments: {
+        word: '認め', reading_parts: parts,
+      } }], '', (key) => key).wordReadingParts).toBeUndefined();
+    }
   });
 });

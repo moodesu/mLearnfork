@@ -6,13 +6,12 @@
 import { ipcMain, dialog, BrowserWindow, app } from 'electron';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import { getReaderImageMimeType } from '../../shared/utils/readerImageFormats';
 import { IPC_CHANNELS } from '../../shared/constants';
 import { getLogger } from '../../shared/utils/logger';
 
 const log = getLogger('electron.fileOperations');
 
-// Image file extensions to read from directories
-const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.tif']);
 const LEGACY_LANGUAGE_ARTIFACTS = new Set([
   'languages/zh-Hans.json',
   'languages/zh-Hant.json',
@@ -51,7 +50,7 @@ export function setupFileOperationsIPC(): void {
       const entries = await fs.readdir(validatedPath, { withFileTypes: true });
       
       const imageFiles = entries
-        .filter(entry => entry.isFile() && IMAGE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()))
+        .filter(entry => entry.isFile() && !!getReaderImageMimeType(entry.name))
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
       
       const files = await Promise.all(
@@ -61,7 +60,7 @@ export function setupFileOperationsIPC(): void {
           return {
             name: entry.name,
             path: filePath,
-            data: data.buffer,
+            data: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
           };
         })
       );

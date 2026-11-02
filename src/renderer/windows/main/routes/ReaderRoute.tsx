@@ -1,3 +1,4 @@
+import { getReaderImageMimeType, isReaderImageFile } from '../../../../shared/utils/readerImageFormats';
 import { withCloudAuth } from '../../../services/cloudSessionManager';
 /**
  * Reader Route
@@ -2033,7 +2034,7 @@ export const ReaderRoute: Component = () => {
             ? savedPageIndex : 0;
 
         const newPages: PageImage[] = result.files.map((file, index) => {
-          const blob = new Blob([file.data]);
+          const blob = new Blob([file.data], { type: getReaderImageMimeType(file.name) || 'application/octet-stream' });
           return {
             id: `page-${index}-${file.name}`,
             kind: 'image',
@@ -2077,7 +2078,7 @@ export const ReaderRoute: Component = () => {
     input.multiple = true;
     input.accept = 'image/*';
     input.onchange = async () => {
-      const files = Array.from(input.files || []).filter(f => f.type.startsWith('image/'));
+      const files = Array.from(input.files || []).filter(isReaderImageFile);
       if (files.length === 0) return;
 
       files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
@@ -2430,9 +2431,7 @@ export const ReaderRoute: Component = () => {
     // Handle image files
     const files: File[] = [];
     for (const file of droppedFiles) {
-      const isImage = file.type.startsWith('image/');
-      const hasImageExtension = /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(file.name);
-      if (isImage || hasImageExtension) {
+      if (isReaderImageFile(file)) {
         files.push(file);
       }
     }

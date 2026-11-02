@@ -9,6 +9,17 @@ import type { PluginBusEnvelope, PluginBusJSONValue } from './pluginBus';
 import type { AppUpdateState } from './appUpdate';
 
 export interface MLearnIPC {
+  mpvOpen: import('./mpv').MpvBridge['open'];
+  mpvEmbeddingAvailable: import('./mpv').MpvBridge['embeddingAvailable'];
+  mpvSetViewport: import('./mpv').MpvBridge['setViewport'];
+  mpvClose: import('./mpv').MpvBridge['close'];
+  mpvControl: import('./mpv').MpvBridge['control'];
+  mpvAddSubtitle: import('./mpv').MpvBridge['addSubtitle'];
+  mpvScreenshot: import('./mpv').MpvBridge['screenshot'];
+  mpvScreenshotAt: import('./mpv').MpvBridge['screenshotAt'];
+  mpvTranscript: import('./mpv').MpvBridge['transcript'];
+  mpvLookupDictionary: import('./mpv').MpvBridge['lookupDictionary'];
+  onMpvState: import('./mpv').MpvBridge['onState'];
   // Settings
   getSettings: () => void;
   saveSettings: (settings: Settings) => void;

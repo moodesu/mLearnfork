@@ -1837,6 +1837,19 @@ const kvStoreBridge: KVStoreBridge = {
 
 export function createCapacitorBridge(): PlatformBridge {
   return {
+    mpv: {
+      embeddingAvailable: async () => false,
+      setViewport: async () => { throw new Error('Embedded mpv requires the Linux desktop app'); },
+      open: async () => { throw new Error('mpv requires the Linux desktop app'); },
+      close: async () => {},
+      control: async () => { throw new Error('mpv requires the Linux desktop app'); },
+      addSubtitle: async () => { throw new Error('mpv requires the Linux desktop app'); },
+      screenshot: async () => null,
+      screenshotAt: async () => { throw new Error('mpv requires the Linux desktop app'); },
+      transcript: async () => { throw new Error('mpv requires the Linux desktop app'); },
+      lookupDictionary: async () => { throw new Error('GoldenDict-ng requires the desktop app'); },
+      onState: () => () => {},
+    },
     settings: settingsBridge,
     flashcards: flashcardBridge,
     plugins: pluginBridge,

@@ -322,6 +322,7 @@ export const AITab: Component = () => {
             value={settings.llmProvider}
             onChange={(e) => handleProviderChange(e.currentTarget.value as LLMProvider)}
             options={[
+              { value: 'manual', label: t('mlearn.AI.Manual.Label') },
               { value: 'builtin', label: t('mlearn.AI.Settings.Provider.Builtin') },
               { value: 'ollama', label: t('mlearn.AI.Settings.Provider.Ollama') },
               { value: 'cloud', label: t('mlearn.AI.Settings.Provider.Cloud') },
@@ -329,6 +330,12 @@ export const AITab: Component = () => {
           />
         </SettingRow>
       </SettingGroup>
+
+      <Show when={settings.llmProvider === 'manual'}>
+        <SettingGroup title={t('mlearn.AI.Manual.Label')}>
+          <HintText>{t('mlearn.AI.Manual.SettingsHint')}</HintText>
+        </SettingGroup>
+      </Show>
 
       {/* Built-in Model Section */}
       <Show when={settings.llmProvider === 'builtin'}>

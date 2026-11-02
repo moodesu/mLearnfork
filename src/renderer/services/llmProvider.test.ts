@@ -389,11 +389,15 @@ describe('llmProvider', () => {
       expect(result).toEqual({ available: false, reason: 'auth_required' });
     });
 
-    it('checks built-in model via bridge.llm.llmCheckModel', async () => {
-      mockBridge.llm.llmCheckModel.mockResolvedValue({ downloaded: true });
+    it('checks the selected built-in model even when the default model is missing', async () => {
+      const builtinModel = 'gemma-4-E4B_q4_0-it.gguf';
+      mockBridge.llm.llmCheckModel.mockImplementation(async (modelFile?: string) => ({
+        downloaded: modelFile === builtinModel,
+      }));
       const { checkAvailability } = await import('./llmProvider');
-      const result = await checkAvailability(makeSettings({ llmProvider: 'builtin' }));
+      const result = await checkAvailability(makeSettings({ llmProvider: 'builtin', builtinModel }));
       expect(mockBridge.llm.llmCheckModel).toHaveBeenCalledOnce();
+      expect(mockBridge.llm.llmCheckModel).toHaveBeenCalledWith(builtinModel);
       expect(result).toEqual({ available: true });
     });
 
@@ -489,6 +493,12 @@ describe('llmProvider', () => {
       const [messages] = mockBridge.llm.llmStream.mock.calls[0] as [{ role: string; content: string }[], unknown];
       expect(messages[0].role).toBe('system');
       expect(messages[0].content).toContain('French');
+      expect(messages[0].content).toContain('Write both explanations in English');
+      expect(messages[0].content).toContain('at most 25 words');
+      expect(messages[0].content).toContain('at most 35 words');
+      const tools = mockBridge.llm.llmStream.mock.calls[0][1];
+      expect(tools.map((tool: { name: string }) => tool.name)).toEqual(['show_explanation']);
+      expect(tools[0].parameters.required).toEqual(['word', 'reading_parts', 'explanation', 'context_explanation']);
       expect(messages[1].role).toBe('user');
       expect(messages[1].content).toContain('bonjour');
       expect(messages[1].content).toContain('Bonjour le monde');
@@ -541,108 +551,43 @@ describe('llmProvider', () => {
     });
 
     it('parses plain-text fallback tool calls during streaming', async () => {
-      const { streamExplanation } = await import('./llmProvider');
-      const onChunk = vi.fn();
+      const { streamExplanation, getCachedExplanation } = await import('./llmProvider');
       const onDone = vi.fn();
       const onToolCall = vi.fn();
-
-      streamExplanation('bonjour', 'Bonjour le monde', 'French', {
-        onChunk,
-        onDone,
-        onError: vi.fn(),
-        onToolCall,
+      streamExplanation('周辺', '彼らの周辺で奇妙なことが起きた。', 'Japanese', {
+        onChunk: vi.fn(), onDone, onError: vi.fn(), onToolCall,
       });
-
-      streamCallback!({ content: 'show_translation({"phrase":"Bonjour le monde","translation":"Hello world"})' });
-      streamCallback!({ content: '\nshow_explanation({"word":"bonjour","explanation":"Here it means a simple greeting."})' });
-      streamCallback!({ content: '\nshow_grammar_points({"points":[{"term":"Greeting phrase","description":"A short declarative expression used to greet someone."}]})' });
+      streamCallback!({ content: 'show_explanation({"word":"周辺","explanation":"The surrounding area or vicinity.",' });
+      expect(onToolCall).not.toHaveBeenCalled();
+      streamCallback!({ content: '"context_explanation":"Here it means around them."})' });
       streamCallback!({ done: true });
-
-      expect(onToolCall).toHaveBeenCalledTimes(3);
-      expect(onToolCall).toHaveBeenNthCalledWith(3, expect.objectContaining({
-        name: 'show_grammar_points',
-        arguments: {
-          points: [
-            {
-              term: 'Greeting phrase',
-              description: 'A short declarative expression used to greet someone.',
-            },
-          ],
-        },
-      }));
-
-      const [finalContent, finalToolCalls] = onDone.mock.calls[0] as [string, LLMToolCall[]];
-      expect(finalContent).toBe('');
-      expect(finalToolCalls.map((toolCall) => toolCall.name)).toEqual([
-        'show_translation',
-        'show_explanation',
-        'show_grammar_points',
-      ]);
-      expect(onChunk).toHaveBeenLastCalledWith(expect.any(String), '');
+      expect(onToolCall).toHaveBeenCalledOnce();
+      expect(onDone.mock.calls[0][0]).toBe('');
+      expect(onDone.mock.calls[0][1][0].arguments.context_explanation).toBe('Here it means around them.');
+      expect(mockBridge.llm.llmStream).toHaveBeenCalledOnce();
+      expect(getCachedExplanation('周辺', '彼らの周辺で奇妙なことが起きた。')).not.toBeNull();
     });
 
-    it('repairs incomplete word explanations by requesting every missing tool call', async () => {
-      const { streamExplanation } = await import('./llmProvider');
+    it('repairs a word response missing its contextual explanation with one tool', async () => {
+      const { streamExplanation, getCachedExplanation } = await import('./llmProvider');
       const onDone = vi.fn();
       const onToolCall = vi.fn();
-
-      streamExplanation('ジーニスト', 'そしてＮｏ４ヒーローベストジーニスト！', 'Japanese', {
-        onChunk: vi.fn(),
-        onDone,
-        onError: vi.fn(),
-        onToolCall,
+      streamExplanation('周辺', '彼らの周辺で奇妙なことが起きた。', 'Japanese', {
+        onChunk: vi.fn(), onDone, onError: vi.fn(), onToolCall,
       });
-
-      streamCallback!({
-        toolCalls: [{
-          id: 'tc-translation',
-          name: 'show_translation',
-          arguments: {
-            phrase: 'そしてＮｏ４ヒーローベストジーニスト！',
-            translation: 'And the No. 4 hero, Best Jeanist!',
-          },
-        }],
-      });
+      streamCallback!({ toolCalls: [{ id: 'partial', name: 'show_explanation', arguments: { word: '周辺', explanation: 'The surrounding area.' } }] });
       streamCallback!({ done: true });
-
       expect(onDone).not.toHaveBeenCalled();
       expect(mockBridge.llm.llmStream).toHaveBeenCalledTimes(2);
-      const [, repairTools] = mockBridge.llm.llmStream.mock.calls[1] as [unknown, Array<{ name: string }>];
-      expect(repairTools.map((tool) => tool.name)).toEqual(['show_explanation', 'show_grammar_points']);
-
-      streamCallback!({
-        toolCalls: [
-          {
-            id: 'tc-explanation',
-            name: 'show_explanation',
-            arguments: {
-              word: 'ジーニスト',
-              explanation: 'In this context, ジーニスト is part of the hero name Best Jeanist.',
-            },
-          },
-          {
-            id: 'tc-grammar',
-            name: 'show_grammar_points',
-            arguments: {
-              points: [
-                {
-                  term: 'そして',
-                  description: 'Connects this announcement to the previous one as “and then/and”.',
-                },
-              ],
-            },
-          },
-        ],
-      });
+      const [messages, tools] = mockBridge.llm.llmStream.mock.calls[1];
+      expect(tools.map((tool: { name: string }) => tool.name)).toEqual(['show_explanation']);
+      expect(messages[0].content).toContain('English');
+      expect(messages[1].content).toContain('context_explanation');
+      streamCallback!({ toolCalls: [{ id: 'explain', name: 'show_explanation', arguments: { word: '周辺', explanation: 'The surrounding area or vicinity.', context_explanation: 'Here it means around them, where strange events happened.' } }] });
       streamCallback!({ done: true });
-
-      expect(onToolCall).toHaveBeenCalledTimes(3);
-      const [, finalToolCalls] = onDone.mock.calls[0] as [string, LLMToolCall[]];
-      expect(finalToolCalls.map((toolCall) => toolCall.name)).toEqual([
-        'show_translation',
-        'show_explanation',
-        'show_grammar_points',
-      ]);
+      expect(onToolCall).toHaveBeenCalledOnce();
+      expect(onDone.mock.calls[0][1]).toHaveLength(1);
+      expect(getCachedExplanation('周辺', '彼らの周辺で奇妙なことが起きた。')).not.toBeNull();
     });
 
     it('uses installed language metadata names in explainer repair prompts', async () => {
@@ -723,164 +668,62 @@ describe('llmProvider', () => {
       const { streamExplanation, getCachedExplanation } = await import('./llmProvider');
       const onDone = vi.fn();
       const onToolCall = vi.fn();
-
-      const handle = streamExplanation('hi', 'Hi there', 'French', {
-        onChunk: vi.fn(),
-        onDone,
-        onError: vi.fn(),
-        onToolCall,
+      const handle = streamExplanation('周辺', '彼らの周辺で奇妙なことが起きた。', 'Japanese', {
+        onChunk: vi.fn(), onDone, onError: vi.fn(), onToolCall,
       });
-
-      streamCallback!({
-        toolCalls: [{
-          id: 'tc-translation',
-          name: 'show_translation',
-          arguments: { phrase: 'Hi there', translation: 'Salut' },
-        }],
-      });
+      streamCallback!({ toolCalls: [{ id: 'partial', name: 'show_explanation', arguments: { explanation: 'The surrounding area.' } }] });
       streamCallback!({ done: true });
-
       expect(mockBridge.llm.llmStream).toHaveBeenCalledTimes(2);
       handle.abort();
-
-      streamCallback!({
-        toolCalls: [
-          {
-            id: 'tc-explanation',
-            name: 'show_explanation',
-            arguments: { word: 'hi', explanation: 'A casual greeting in this context.' },
-          },
-          {
-            id: 'tc-grammar',
-            name: 'show_grammar_points',
-            arguments: { points: [{ term: 'Greeting', description: 'A short greeting phrase.' }] },
-          },
-        ],
-      });
+      streamCallback!({ toolCalls: [{ id: 'explain', name: 'show_explanation', arguments: { word: '周辺', explanation: 'The surrounding area or vicinity.', context_explanation: 'Here it means around them, where strange events happened.' } }] });
       streamCallback!({ done: true });
-
       expect(onDone).not.toHaveBeenCalled();
-      expect(onToolCall).toHaveBeenCalledTimes(1);
-      expect(getCachedExplanation('hi', 'Hi there')).toBeNull();
+      expect(onToolCall).not.toHaveBeenCalled();
+      expect(getCachedExplanation('周辺', '彼らの周辺で奇妙なことが起きた。')).toBeNull();
     });
 
     it('does not cache partial output when repair attempts are exhausted', async () => {
       const { streamExplanation, getCachedExplanation } = await import('./llmProvider');
       const onDone = vi.fn();
-
-      streamExplanation('hi', 'Hi there', 'French', {
-        onChunk: vi.fn(),
-        onDone,
-        onError: vi.fn(),
-        onToolCall: vi.fn(),
+      const onToolCall = vi.fn();
+      streamExplanation('周辺', '彼らの周辺で奇妙なことが起きた。', 'Japanese', {
+        onChunk: vi.fn(), onDone, onError: vi.fn(), onToolCall,
       });
-
-      streamCallback!({
-        toolCalls: [{
-          id: 'tc-translation',
-          name: 'show_translation',
-          arguments: { phrase: 'Hi there', translation: 'Salut' },
-        }],
-      });
-
-      for (let attempt = 0; attempt <= 3; attempt += 1) {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        streamCallback!({ toolCalls: [{ id: 'partial', name: 'show_explanation', arguments: { explanation: 'The surrounding area.' } }] });
         streamCallback!({ done: true });
       }
-
+      expect(mockBridge.llm.llmStream).toHaveBeenCalledTimes(2);
       expect(onDone).toHaveBeenCalledOnce();
-      const [, finalToolCalls] = onDone.mock.calls[0] as [string, LLMToolCall[]];
-      expect(finalToolCalls.map((toolCall) => toolCall.name)).toEqual(['show_translation']);
-      expect(getCachedExplanation('hi', 'Hi there')).toBeNull();
+      expect(onDone.mock.calls[0][1]).toEqual([]);
+      expect(getCachedExplanation('周辺', '彼らの周辺で奇妙なことが起きた。')).toBeNull();
     });
 
-    it('parses tolerant fallback tool-call syntax for explanation and grammar sections', async () => {
-      const { streamExplanation } = await import('./llmProvider');
+    it('parses tolerant fallback syntax for both word explanations', async () => {
+      const { streamExplanation, getCachedExplanation } = await import('./llmProvider');
       const onDone = vi.fn();
       const onToolCall = vi.fn();
-
-      streamExplanation('つもり', '殺すつもりはない', 'Japanese', {
-        onChunk: vi.fn(),
-        onDone,
-        onError: vi.fn(),
-        onToolCall,
+      streamExplanation('周辺', '彼らの周辺で奇妙なことが起きた。', 'Japanese', {
+        onChunk: vi.fn(), onDone, onError: vi.fn(), onToolCall,
       });
-
-      streamCallback!({ content: 'show_translation: {phrase: \'殺すつもりはない\', translation: \'I do not intend to kill.\'}' });
-      streamCallback!({ content: '\nshow_explanation({word: \'つもり\', explanation: \'In this sentence, つもり expresses intention or plan.\',})' });
-      streamCallback!({ content: '\nshow_grammar_points: {points: [{term: \'つもり\', description: \'Nominalizer used for intention or plan.\',}, {term: \'はない\', description: \'Negates the stated intention.\',},],}' });
+      streamCallback!({ content: "show_explanation: {word: '周辺', explanation: 'The surrounding area.', context_explanation: 'Here it means around them.',}" });
       streamCallback!({ done: true });
-
-      expect(onToolCall).toHaveBeenCalledTimes(3);
-
-      const [, finalToolCalls] = onDone.mock.calls[0] as [string, LLMToolCall[]];
-      expect(finalToolCalls).toEqual([
-        expect.objectContaining({
-          name: 'show_translation',
-          arguments: {
-            phrase: '殺すつもりはない',
-            translation: 'I do not intend to kill.',
-          },
-        }),
-        expect.objectContaining({
-          name: 'show_explanation',
-          arguments: {
-            word: 'つもり',
-            explanation: 'In this sentence, つもり expresses intention or plan.',
-          },
-        }),
-        expect.objectContaining({
-          name: 'show_grammar_points',
-          arguments: {
-            points: [
-              {
-                term: 'つもり',
-                description: 'Nominalizer used for intention or plan.',
-              },
-              {
-                term: 'はない',
-                description: 'Negates the stated intention.',
-              },
-            ],
-          },
-        }),
-      ]);
+      expect(onToolCall).toHaveBeenCalledOnce();
+      expect(onDone.mock.calls[0][1][0].arguments).toEqual({ word: '周辺', explanation: 'The surrounding area.', context_explanation: 'Here it means around them.' });
+      expect(getCachedExplanation('周辺', '彼らの周辺で奇妙なことが起きた。')).not.toBeNull();
     });
 
     it('preserves apostrophes and JSON-like text inside tolerant fallback values', async () => {
-      const { streamExplanation } = await import('./llmProvider');
+      const { streamExplanation, getCachedExplanation } = await import('./llmProvider');
       const onDone = vi.fn();
-
-      streamExplanation('intention', 'I do not intend to leave', 'English', {
-        onChunk: vi.fn(),
-        onDone,
-        onError: vi.fn(),
-        onToolCall: vi.fn(),
+      const onToolCall = vi.fn();
+      streamExplanation('周辺', '彼らの周辺で奇妙なことが起きた。', 'Japanese', {
+        onChunk: vi.fn(), onDone, onError: vi.fn(), onToolCall,
       });
-
-      streamCallback!({ content: 'show_translation: {phrase: "I do not intend to leave", translation: "I do not intend to leave"}' });
-      streamCallback!({ content: '\nshow_explanation: {word: \'intention\', explanation: \'It\'s the speaker\'s plan here, not {term: value} JSON.\'}' });
-      streamCallback!({ content: '\nshow_grammar_points: {points: [{term: \'do not\', description: \'The auxiliary doesn\'t change the main verb.\',},],}' });
+      streamCallback!({ content: "show_explanation: {word: '周辺', explanation: 'The surrounding area.', context_explanation: 'It\'s the speaker\'s surroundings, not {term: value} JSON.'}" });
       streamCallback!({ done: true });
-
-      const [, finalToolCalls] = onDone.mock.calls[0] as [string, LLMToolCall[]];
-      expect(finalToolCalls[1]).toEqual(expect.objectContaining({
-        name: 'show_explanation',
-        arguments: {
-          word: 'intention',
-          explanation: "It's the speaker's plan here, not {term: value} JSON.",
-        },
-      }));
-      expect(finalToolCalls[2]).toEqual(expect.objectContaining({
-        name: 'show_grammar_points',
-        arguments: {
-          points: [
-            {
-              term: 'do not',
-              description: "The auxiliary doesn't change the main verb.",
-            },
-          ],
-        },
-      }));
+      expect(onDone.mock.calls[0][1][0].arguments.context_explanation).toBe("It's the speaker's surroundings, not {term: value} JSON.");
+      expect(getCachedExplanation('周辺', '彼らの周辺で奇妙なことが起きた。')).not.toBeNull();
     });
 
     it('ignores incomplete structured tool-call fragments', async () => {
@@ -909,21 +752,28 @@ describe('llmProvider', () => {
 
     it('caches the result after onDone and returns it on second call', async () => {
       const { streamExplanation, getCachedExplanation } = await import('./llmProvider');
-      const toolCalls: LLMToolCall[] = [
-        { id: 'tc1', name: 'show_translation', arguments: { phrase: 'hi', translation: 'salut' } },
-        { id: 'tc2', name: 'show_explanation', arguments: { word: 'hi', explanation: 'A casual greeting in this context.' } },
-        { id: 'tc3', name: 'show_grammar_points', arguments: { points: [{ term: 'Greeting', description: 'Short greeting phrase.' }] } },
-      ];
-
       const onDone = vi.fn();
-      streamExplanation('hi', 'Hi there', 'French', { onChunk: vi.fn(), onDone, onError: vi.fn(), onToolCall: vi.fn() });
-
-      streamCallback!({ toolCalls });
+      const onToolCall = vi.fn();
+      streamExplanation('周辺', '彼らの周辺で奇妙なことが起きた。', 'Japanese', {
+        onChunk: vi.fn(), onDone, onError: vi.fn(), onToolCall,
+      });
+      const toolCall = { id: 'explain', name: 'show_explanation', arguments: { word: '周辺', explanation: 'The surrounding area or vicinity.', context_explanation: 'Here it means around them, where strange events happened.' } };
+      streamCallback!({ toolCalls: [toolCall] });
       streamCallback!({ done: true });
+      expect(getCachedExplanation('周辺', '彼らの周辺で奇妙なことが起きた。')?.toolCalls).toEqual([toolCall]);
+      expect(getCachedExplanation('周辺', '彼らの周辺で別のことが起きた。')).toBeNull();
+      expect(onDone).toHaveBeenCalledOnce();
+      expect(mockBridge.llm.llmStream).toHaveBeenCalledOnce();
+    });
 
-      const cached = getCachedExplanation('hi', 'Hi there');
-      expect(cached).not.toBeNull();
-      expect(cached!.toolCalls).toEqual(toolCalls);
+    it('keeps sentences with the same first 100 characters separate in the cache', async () => {
+      const { streamExplanation, getCachedExplanation } = await import('./llmProvider');
+      const prefix = 'Long shared context '.repeat(10);
+      streamExplanation('area', prefix + 'near the house', 'English', { onChunk: vi.fn(), onDone: vi.fn(), onError: vi.fn(), onToolCall: vi.fn() });
+      streamCallback!({ toolCalls: [{ id: 'explain', name: 'show_explanation', arguments: { word: '周辺', explanation: 'The surrounding area or vicinity.', context_explanation: 'Here it means around them, where strange events happened.' } }] });
+      streamCallback!({ done: true });
+      expect(getCachedExplanation('area', prefix + 'near the house')).not.toBeNull();
+      expect(getCachedExplanation('area', prefix + 'near the office')).toBeNull();
     });
 
     it('does not cache translation-only structured word explanations', async () => {
@@ -943,7 +793,7 @@ describe('llmProvider', () => {
 
       streamExplanation('hi', 'Hi there', 'French', { onChunk: vi.fn(), onDone: vi.fn(), onError: vi.fn(), onToolCall: vi.fn() });
 
-      streamCallback!({ content: 'show_translation({"phrase":"Hi there","translation":"Salut"})' });
+      streamCallback!({ toolCalls: [{ id: 'partial', name: 'show_explanation', arguments: { explanation: 'A casual greeting.' } }] });
       streamCallback!({ content: '\nshow_explanation({"word":"hi","explanation":"A casual greeting."' });
       streamCallback!({ done: true });
 
@@ -1146,5 +996,51 @@ describe('llmProvider', () => {
       const { requiresSetup } = await import('./llmProvider');
       expect(requiresSetup(makeSettings({ llmProvider: 'cloud', cloudAuthStatus: 'signed-out' }))).toBe(true);
     });
+  });
+});
+
+
+describe('manual AI', () => {
+  it('is ready without a downloaded model or local component', async () => {
+    const { isLLMReady, checkAvailability, streamChat } = await import('./llmProvider');
+    const settings = { llmProvider: 'manual', llmEnabled: false } as Settings;
+    expect(isLLMReady(settings)).toBe(true);
+    expect(await checkAvailability(settings)).toEqual({ available: true });
+    const onError = vi.fn();
+    mockBridge.llm.llmStream.mockClear();
+    streamChat([], [], { onChunk: vi.fn(), onToolCall: vi.fn(), onDone: vi.fn(), onError }, settings);
+    expect(onError).toHaveBeenCalledOnce();
+    expect(mockBridge.llm.llmStream).not.toHaveBeenCalled();
+  });
+
+  it('includes the exact word, full context, English cards and reading format', async () => {
+    const { buildManualExplanationPrompt } = await import('./llmProvider');
+    const prompt = buildManualExplanationPrompt('認め', '不思議とか神秘とかを認めない。', 'Japanese');
+    expect(prompt).toContain('認め');
+    expect(prompt).toContain('不思議とか神秘とかを認めない。');
+    expect(prompt).toContain('Write both explanations in English');
+    expect(prompt).toContain('reading_parts');
+    expect(prompt).toContain('return ONLY one JSON object');
+  });
+
+  it('accepts JSON with optional code fences and preserves readings', async () => {
+    const { parseManualExplanationResponse } = await import('./llmProvider');
+    const response = { word: '認め', reading_parts: [{ text: '認', reading: 'みと' }, { text: 'め', reading: '' }], explanation: 'To acknowledge.', context_explanation: 'Here it means accept.' };
+    const result = parseManualExplanationResponse('```json\n' + JSON.stringify(response) + '\n```', '認め');
+    expect(result?.[0].arguments).toEqual(response);
+  });
+
+  it('rejects malformed or incomplete answers without hiding the existing explanation', async () => {
+    const { parseManualExplanationResponse } = await import('./llmProvider');
+    for (const input of ['plain prose', '{}', 'null', '[]', '{"explanation":"Meaning only"}', '{"explanation":"Meaning","context_explanation":" "}']) {
+      expect(parseManualExplanationResponse(input, '認め')).toBeNull();
+    }
+  });
+
+  it('supports phrase mode using translation and grammar cards', async () => {
+    const { buildManualExplanationPrompt, parseManualExplanationResponse } = await import('./llmProvider');
+    expect(buildManualExplanationPrompt('', 'Hello there', 'English', { mode: 'phrase' })).toContain('"points"');
+    const calls = parseManualExplanationResponse(JSON.stringify({ translation: 'Hello there', points: [{ term: 'Hello', description: 'A greeting.' }] }), '', 'phrase');
+    expect(calls?.map((call) => call.name)).toEqual(['show_translation', 'show_grammar_points']);
   });
 });

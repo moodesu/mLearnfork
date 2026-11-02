@@ -1,3 +1,27 @@
+# Sora 空
+
+Sora is moo's independently maintained, modified version of [mLearn by Adrian Vlasov](https://github.com/adrianvla/mLearn). It adds embedded mpv playback, custom subtitle and dictionary interactions, bounded local LLM contexts, and manual sentence-study prompts for external AI chats.
+
+**This software has been modified by moo. Sora is not an official mLearn release.**
+
+Original copyright © 2024–2026 Adrian Vlasov. The original [Sustainable Use License v1.0](LICENSE), copyright notices, legal documents, and third-party licence credits remain applicable and are retained. Redistribution is subject to that licence.
+
+Project and issues: https://github.com/moodesu/mLearnfork
+
+Build: `npm run dist:linux:custom`
+
+Launch from this source directory:
+
+```bash
+NODE_LLAMA_CPP_GPU=off MLEARN_EMBEDDED_MPV=1 ./release/Sora-2.9.11-x86_64.AppImage --ozone-platform=x11
+```
+
+The existing `~/.config/mlearn-custom` profile is intentionally retained to preserve settings, models, and learning data. Internal bridge names, protocol identifiers, and language catalog addresses remain compatible with existing components. Upstream automatic updates are disabled; this fork is updated through manual builds.
+
+## Original mLearn documentation (upstream reference)
+
+The documentation below describes the original project. Its releases, hosted services, and support links belong to upstream mLearn, not to Sora.
+
 # mLearn
 
 [![Version](https://img.shields.io/github/package-json/v/adrianvla/mLearn?label=version&color=blue)](https://github.com/adrianvla/mLearn/releases)

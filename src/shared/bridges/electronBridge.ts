@@ -358,6 +358,19 @@ const diagnosticsBridge: DiagnosticsBridge = {
 
 export function createElectronBridge(): PlatformBridge {
   return {
+    mpv: {
+      open: (path, start, viewport) => getIPC().mpvOpen(path, start, viewport),
+      embeddingAvailable: () => getIPC().mpvEmbeddingAvailable(),
+      setViewport: viewport => getIPC().mpvSetViewport(viewport),
+      close: () => getIPC().mpvClose(),
+      control: control => getIPC().mpvControl(control),
+      addSubtitle: path => getIPC().mpvAddSubtitle(path),
+      screenshot: () => getIPC().mpvScreenshot(),
+      screenshotAt: time => getIPC().mpvScreenshotAt(time),
+      transcript: () => getIPC().mpvTranscript(),
+      lookupDictionary: word => getIPC().mpvLookupDictionary(word),
+      onState: callback => getIPC().onMpvState(callback),
+    },
     settings: settingsBridge,
     flashcards: flashcardBridge,
     plugins: pluginBridge,

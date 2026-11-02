@@ -415,6 +415,15 @@ export function useSubtitles() {
     tokenizationGen++;
   };
 
+  // Native players already select the active cue, including their subtitle delay.
+  // Reuse the same tokenizer and word tracking without applying a second offset.
+  const loadLiveSubtitle = (subtitle: Subtitle | null) => {
+    clearSubtitles();
+    if (!subtitle) return;
+    setSubtitles([subtitle]);
+    void updateTime(subtitle.start - settings.subsOffsetTime);
+  };
+
   return {
     subtitles,
     currentSubtitle,
@@ -426,6 +435,7 @@ export function useSubtitles() {
     loadSubtitleFile,
     updateTime,
     clearSubtitles,
+    loadLiveSubtitle,
     offset: () => settings.subsOffsetTime,
   };
 }

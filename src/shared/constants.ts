@@ -70,6 +70,17 @@ export const API_PATHS = {
 
 // IPC Channel names - strongly typed
 export const IPC_CHANNELS = {
+  MPV_OPEN: 'mpv:open',
+  MPV_EMBEDDING_AVAILABLE: 'mpv:embedding-available',
+  MPV_VIEWPORT: 'mpv:viewport',
+  MPV_CLOSE: 'mpv:close',
+  MPV_CONTROL: 'mpv:control',
+  MPV_SUBTITLE: 'mpv:subtitle',
+  MPV_SCREENSHOT: 'mpv:screenshot',
+  MPV_SCREENSHOT_AT: 'mpv:screenshot-at',
+  MPV_TRANSCRIPT: 'mpv:transcript',
+  MPV_LOOKUP: 'mpv:lookup',
+  MPV_STATE: 'mpv:state',
   // Settings
   GET_SETTINGS: 'get-settings',
   SAVE_SETTINGS: 'save-settings',

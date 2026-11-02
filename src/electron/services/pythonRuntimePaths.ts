@@ -61,6 +61,9 @@ function pipExecutableInRuntimeRoot(runtimeRoot: string): string {
 export function getPythonExecutableCandidates(): string[] {
   const userRuntimeRoot = path.join(getUserDataPath(), 'env');
 
+  if (isPackaged && process.env.SORA_STANDALONE === '1') {
+    return getResourceRuntimeRoots().map(pythonExecutableInRuntimeRoot);
+  }
   return uniquePaths([
     pythonExecutableInRuntimeRoot(userRuntimeRoot),
     getPythonExecutablePath(),

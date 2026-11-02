@@ -3,7 +3,7 @@
  * Provides nested context providers for all windows (Russian Doll pattern)
  */
 
-import { ParentComponent, Component, JSX, Show, createSignal, createEffect, createMemo, onMount, onCleanup } from 'solid-js';
+import { ParentComponent, Component, JSX, Show, createSignal, createEffect, onMount, onCleanup } from 'solid-js';
 import { SettingsProvider, useSettings } from './SettingsContext';
 import './WindowWrapper.css';
 import { LanguageProvider } from './LanguageContext';
@@ -14,7 +14,7 @@ import { InstallProgressProvider, useInstallProgress } from './InstallProgressCo
 import { LocalizationProvider, useLocalization } from './LocalizationContext';
 import { ResponsiveProvider } from './ResponsiveContext';
 import { ToastContainer, showToast } from '../components/common/Feedback/Toast';
-import { Btn, ErrorModal, EulaModal, Modal, ProgressBar } from '../components/common';
+import { Btn, ErrorModal, Modal, ProgressBar } from '../components/common';
 import { WindowDragRegion } from '../components/utils/WindowDragRegion';
 import { TitleBar } from '../components/common';
 import { CloudReLoginModal } from '../components/cloud/CloudReLoginModal';
@@ -203,50 +203,6 @@ const ActivityRuntimeBridge: Component = () => {
 };
 
 
-async function computeSha256(text: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-const GlobalEulaModal: Component = () => {
-  const { settings, updateSettings, isLoading } = useSettings();
-  const [eulaContent, setEulaContent] = createSignal('');
-  const [currentHash, setCurrentHash] = createSignal('');
-  const needsAcceptance = createMemo(() => {
-    const hash = currentHash();
-    return Boolean(hash && settings.eulaAcceptedHash !== hash);
-  });
-
-  onMount(() => {
-    const bridge = getBridge();
-    const cleanup = bridge.server.onLegalDocumentReceive(async (content) => {
-      setEulaContent(content);
-      const hash = await computeSha256(content);
-      setCurrentHash(hash);
-    });
-    bridge.server.getLegalDocument('EULA');
-    onCleanup(() => cleanup());
-  });
-
-  const handleAccept = () => {
-    updateSettings({
-      eulaAccepted: true,
-      eulaAcceptedVersion: '1.0',
-      eulaAcceptedAt: Date.now(),
-      eulaAcceptedHash: currentHash(),
-    });
-  };
-
-  return (
-    <Show when={needsAcceptance() && !isLoading()}>
-      <EulaModal content={eulaContent()} onAccept={handleAccept} />
-    </Show>
-  );
-};
-
 /**
  * GlobalInstallProgressModal - Non-dismissable modal shown during any
  * background installation (Python runtime, component reconciliation, pip).
@@ -371,7 +327,6 @@ export const WindowWrapper: ParentComponent<{ showDragRegion?: boolean; showTitl
           <SettingsProvider>
             <ActivityRuntimeBridge />
             <WindowLoadingScreen transparent={props.transparent} />
-            <GlobalEulaModal />
             <GlobalRuntimeRestartModal />
             <GlobalInstallProgressModal />
             <BuiltinModelStatusListener />

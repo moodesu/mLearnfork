@@ -17,6 +17,7 @@ import {
   captureReaderImageForFlashcard,
   captureFallbackImage,
 } from './flashcardImageCapture';
+import { registerNativeVideoCapture } from './nativeVideoCapture';
 
 const originalCreateElement = document.createElement.bind(document);
 const HAVE_CURRENT_DATA_READY_STATE = 2;
@@ -40,6 +41,14 @@ function mockCanvasCreation(dataUrl: string | null = 'data:image/jpeg;base64,FAK
 }
 
 describe('flashcardImageCapture', () => {
+  it('saves a native mpv screenshot without a browser video element', async () => {
+    const release = registerNativeVideoCapture(async () => 'data:image/jpeg;base64,MPV');
+    mockSaveFlashcardImage.mockResolvedValue('flashcard-image://native');
+    try {
+      expect(await captureVideoFrameForFlashcard('native')).toBe('flashcard-image://native');
+      expect(mockSaveFlashcardImage).toHaveBeenCalledWith('native', 'data:image/jpeg;base64,MPV');
+    } finally { release(); }
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     document.createElement = originalCreateElement;

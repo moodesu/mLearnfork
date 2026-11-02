@@ -1,5 +1,40 @@
 {
   "mlearn": {
+    "Mpv": {
+      "Embedded": "Eingebettetes Video (experimentell)",
+      "VideoWidth": "Videobreite",
+      "EmbeddedHint": "Verwende die Steuerelemente und den anklickbaren Satz neben dem Video. Deaktiviere „Eingebettetes Video“, um zum separaten Player zurückzukehren.",
+      "FullscreenApp": "App im Vollbild",
+      "VideoAreaUnavailable": "Der eingebettete Videobereich ist noch nicht bereit. Bitte erneut versuchen.",
+      "Options": "Spuren, Timing und Wiedergabeoptionen",
+      "SelectedLine": "Ausgewählter Satz",
+      "CurrentLine": "Aktueller Satz",
+      "Follow": "Wiedergabe folgen",
+      "LookupHint": "Ein Wort anklicken für GoldenDict-ng; darüberfahren für Sora 空 und Lernkarten. Eine Untertitelzeile auswählen, um anzuhalten und sie zu lernen.",
+      "LookupWord": "Wort oder Ausdruck",
+      "GoldenDict": "GoldenDict-ng",
+      "Transcript": "Untertitelliste",
+      "Reload": "Liste neu laden",
+      "LoadingTranscript": "Untertitelliste wird geladen…",
+      "NoTranscript": "Eine Textuntertitelspur auswählen oder eine externe Untertiteldatei öffnen. Die Liste benötigt ffmpeg.",
+      "Title": "mpv (Linux-Prototyp)",
+      "Engine": "Player",
+      "Browser": "Browser-Player",
+      "WindowHint": "Das Video läuft in einem separaten mpv-Fenster. Wiedergabe- und Lernfunktionen bleiben hier.",
+      "Retry": "mpv erneut öffnen",
+      "Play": "Abspielen",
+      "Pause": "Pause",
+      "Fullscreen": "Video im Vollbild",
+      "Words": "Wort-Seitenleiste",
+      "Position": "Wiedergabeposition",
+      "AudioTrack": "Audiospur",
+      "SubtitleTrack": "Untertitelspur",
+      "Off": "Aus",
+      "Delay": "Untertitelverzögerung (Sekunden; positiv = später)",
+      "Volume": "Lautstärke",
+      "Speed": "Wiedergabegeschwindigkeit",
+      "CaptureHint": "Vor dem Hinzufügen einer Karte beim Satz pausieren. Karten verwenden den aktuellen mpv-Screenshot; Videoclips und synthetische Sprache gehören nicht zu diesem Prototyp. Bilduntertitel liefern keinen anklickbaren Text."
+    },
     "Management": {
       "ChooseGroup": "Klasse oder Gruppe auswählen",
       "ChooseGroupDescription": "Wähle aus, wo deine Aktivität und die Schulrichtlinien gelten.",
@@ -35,6 +70,18 @@
       "Title": "Restart Required"
     },
     "AI": {
+      "Manual": {
+        "Label": "Manual AI (copy and paste)",
+        "SettingsHint": "Explain prepares a prompt for ChatGPT, Claude, or Gemini. Copy it into your AI chat, then paste the JSON answer back. No local model or API key is needed. Manual mode supports Explain; the automatic tutor requires another provider.",
+        "Instructions": "Copy the prompt into ChatGPT, Claude, or Gemini. Paste its JSON answer below, then click Show explanation.",
+        "Prompt": "AI prompt",
+        "CopyPrompt": "Copy AI prompt",
+        "Copied": "Prompt copied",
+        "Response": "AI response",
+        "PastePlaceholder": "Paste the JSON answer from your AI chat here…",
+        "ShowResponse": "Show explanation",
+        "InvalidResponse": "Paste the complete JSON answer containing both explanations. Ask the AI to return the requested JSON format."
+      },
       "CloudUnreachable": "Der Cloud-Dienst ist nicht erreichbar. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
       "DownloadModel": "Modell herunterladen",
       "ModelNotDownloaded": "Modell ist noch nicht heruntergeladen.",
@@ -224,20 +271,25 @@
       "WordsTab": "Wörter"
     },
     "About": {
-      "Description": "mLearn ist ein Werkzeug zum Sprachenlernen durch Immersion. Schauen Sie Videos, lesen Sie Manga und lernen Sie Vokabeln natürlich mit intelligenten Untertiteln und Spaced Repetition.",
+      "SoraProject": "Sora project",
+      "SoraUpstream": "Original mLearn project",
+      "SoraAttribution": "Sora 空 is an independently maintained, modified version of mLearn by Adrian Vlasov. Original copyright © 2024–2026 Adrian Vlasov. Modifications maintained by moo. Licensed under the Sustainable Use License v1.0; original and third-party notices are retained.",
+      "SoraUpdates": "This fork uses manual builds. Upstream mLearn updates are disabled.",
+
+      "Description": "Sora 空 ist ein Werkzeug zum Sprachenlernen durch Immersion. Schauen Sie Videos, lesen Sie Manga und lernen Sie Vokabeln natürlich mit intelligenten Untertiteln und Spaced Repetition.",
       "Updates": {
         "Title": "Aktualisierungen",
         "Idle": "Bereit, nach Aktualisierungen zu suchen.",
         "Checking": "Nach Aktualisierungen wird gesucht…",
-        "UpToDate": "mLearn ist auf dem neuesten Stand.",
+        "UpToDate": "Sora 空 ist auf dem neuesten Stand.",
         "Available": "Version {version} ist verfügbar.",
         "Downloading": "Version {version} wird heruntergeladen…",
         "Ready": "Version {version} kann installiert werden.",
-        "Installing": "mLearn wird neu gestartet, um Version {version} zu installieren…",
-        "Error": "mLearn konnte nicht aktualisiert werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
-        "CheckError": "mLearn konnte nicht nach Aktualisierungen suchen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
-        "DownloadError": "mLearn konnte die Aktualisierung nicht herunterladen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
-        "InstallError": "mLearn konnte die Aktualisierung nicht starten. Versuchen Sie den Neustart erneut oder öffnen Sie die Downloadseite.",
+        "Installing": "Sora 空 wird neu gestartet, um Version {version} zu installieren…",
+        "Error": "Sora 空 konnte nicht aktualisiert werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+        "CheckError": "Sora 空 konnte nicht nach Aktualisierungen suchen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+        "DownloadError": "Sora 空 konnte die Aktualisierung nicht herunterladen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+        "InstallError": "Sora 空 konnte die Aktualisierung nicht starten. Versuchen Sie den Neustart erneut oder öffnen Sie die Downloadseite.",
         "UpdateFailedTitle": "Aktualisierung fehlgeschlagen",
         "Development": "Automatische Aktualisierungen sind in installierten Desktop-Versionen verfügbar.",
         "ManualDownload": "Diese Installation kann sich nicht selbst aktualisieren. Laden Sie die neueste Version von der Website herunter.",
@@ -246,7 +298,7 @@
         "Restart": "Neu starten und aktualisieren",
         "DownloadPage": "Downloadseite öffnen",
         "AutomaticDownloads": "Aktualisierungen automatisch herunterladen",
-        "AutomaticDownloadsDescription": "Verifizierte Aktualisierungen im Hintergrund laden und beim nächsten Start von mLearn installieren.",
+        "AutomaticDownloadsDescription": "Verifizierte Aktualisierungen im Hintergrund laden und beim nächsten Start von Sora 空 installieren.",
         "WhatsNew": "Neuigkeiten",
         "AvailableTitle": "Aktualisierung verfügbar",
         "ReadyTitle": "Bereit zur Aktualisierung"
@@ -262,7 +314,7 @@
         "UpDown": "Lautstärke anpassen"
       },
       "Licenses": "Lizenzen",
-      "Title": "mLearn",
+      "Title": "Sora 空",
       "VersionLabel": "Version {version}",
       "Website": "Webseite"
     },
@@ -709,7 +761,7 @@
         "BackendStopped": "Der Backend-Server wurde unerwartet beendet. Starten Sie die Anwendung neu.",
         "FileNotFound": "Eine benötigte Datei wurde nicht gefunden. Installieren Sie die Anwendung neu.",
         "PermissionDenied": "Zugriff verweigert. Überprüfen Sie die Systemberechtigungen oder starten Sie die Anwendung als Administrator.",
-        "PortInUse": "Eine andere Anwendung belegt den benötigten Port. Schließen Sie andere mLearn-Instanzen oder starten Sie den Computer neu."
+        "PortInUse": "Eine andere Anwendung belegt den benötigten Port. Schließen Sie andere Sora 空-Instanzen oder starten Sie den Computer neu."
       },
       "Quit": "Beenden",
       "ShowDetails": "Details anzeigen",
@@ -722,6 +774,8 @@
       }
     },
     "Explainer": {
+      "Meaning": "Bedeutung",
+      "InThisSentence": "In diesem Satz",
       "Explanation": "Erklärung",
       "GenerationFailed": "Die KI-Erklärung konnte nicht erstellt werden. Versuchen Sie es erneut.",
       "GeneratedBy": "Generiert von {provider}",
@@ -945,7 +999,7 @@
         "GeneratingCode": "Verbindungscode wird generiert...",
         "LoadingLibraries": "Bibliotheken werden geladen...",
         "PointCamera": "Kamera auf den QR-Code richten...",
-        "QRHint": "QR-Code in der mLearn-App scannen zum Synchronisieren",
+        "QRHint": "QR-Code in der Sora 空-App scannen zum Synchronisieren",
         "ScanQRInstead": "QR scannen",
         "ShowQRInstead": "QR anzeigen",
         "SyncedSuccessfully": "Lernkarten synchronisiert!",
@@ -1004,7 +1058,7 @@
         "SaveChanges": "Änderungen speichern"
       },
       "Add": "Hinzufügen",
-      "AppName": "mLearn",
+      "AppName": "Sora 空",
       "Aria": {
         "CloseAlert": "Meldung schließen",
         "CloseModal": "Dialog schließen",
@@ -1083,7 +1137,7 @@
           "Title": "Reader"
         },
         "Settings": {
-          "Description": "mLearn anpassen",
+          "Description": "Sora 空 anpassen",
           "Title": "Einstellungen"
         },
         "Video": {
@@ -1125,7 +1179,7 @@
         "ChangeLanguage": "Sprache wechseln",
         "ContinueLearning": "Weiterlernen",
         "LearningLanguage": "{language} lernen",
-        "Title": "mLearn",
+        "Title": "Sora 空",
         "TitleDescription": "Wähle eine Option unten aus, um zu beginnen"
       }
     },
@@ -1150,11 +1204,11 @@
       "Components": {
         "ExplainAi": {
           "Description": "Installiert das lokale LLM-Neuronale-Netz. Deaktivieren, um ~3 GB Abhängigkeiten zu überspringen.",
-          "Title": "mLearn Explain KI-Modul installieren"
+          "Title": "Sora 空 Explain KI-Modul installieren"
         },
         "Reader": {
           "Description": "Installiert OCR zum Lesen von Manga/Bildern. Deaktivieren, um ~2 GB Abhängigkeiten zu überspringen.",
-          "Title": "mLearn Reader-Modul installieren"
+          "Title": "Sora 空 Reader-Modul installieren"
         },
         "Voice": {
           "Description": "Installiert Spracherkennung, Text-to-Speech und Stimmklonen. Deaktivieren, um ~4 GB Abhängigkeiten zu überspringen.",
@@ -1162,10 +1216,10 @@
         }
       },
       "Instructions": {
-        "ChooseComponents": "Wählen Sie, was Sie lernen möchten und welche Sprache mLearn verwenden soll.",
+        "ChooseComponents": "Wählen Sie, was Sie lernen möchten und welche Sprache Sora 空 verwenden soll.",
         "ClickToBegin": "Klicken Sie auf Installieren, um zu beginnen.",
         "DownloadNote": "Alle Downloads werden automatisch verarbeitet. Eine stabile Verbindung wird empfohlen.",
-        "ForgetSomething": "Falls Sie etwas vergessen haben zu installieren, löschen Sie mLearn und starten Sie das Installationsprogramm neu.",
+        "ForgetSomething": "Falls Sie etwas vergessen haben zu installieren, löschen Sie Sora 空 und starten Sie das Installationsprogramm neu.",
         "LanguageUnlocks": "Sprachdaten werden erst installiert, wenn Sie es ausdrücklich starten."
       },
       "DictionaryTarget": {
@@ -1194,7 +1248,7 @@
       },
       "SetupSentence": {
         "LearnPrefix": "Ich möchte lernen",
-        "AppLanguagePrefix": "mit mLearn auf",
+        "AppLanguagePrefix": "mit Sora 空 auf",
         "AppLanguageSuffix": ".",
         "DictionaryPrefix": "Wörterbuchdefinitionen sollen sein auf",
         "LoadingLanguages": "Verfügbare Sprachen werden geladen…"
@@ -1684,7 +1738,7 @@
           "Update": "Sprachdaten aktualisieren",
           "UpdateRequired": "Aktualisierung der Sprachdaten verfügbar",
           "MissingRequired": "Sprachdaten erforderlich",
-          "RequiresAppVersion": "Erfordert mLearn {version} oder neuer"
+          "RequiresAppVersion": "Erfordert Sora 空 {version} oder neuer"
         },
         "DictionaryTarget": {
           "Description": "Wählen Sie die Sprache für Wörterbuchdefinitionen",
@@ -1721,7 +1775,7 @@
         "Permissions": "Berechtigungen",
         "Empty": {
           "Title": "Keine Plugins installiert",
-          "Description": "Installiere ein Plugin-Paket, um mLearn zu erweitern."
+          "Description": "Installiere ein Plugin-Paket, um Sora 空 zu erweitern."
         },
         "Status": {
           "active": "Aktiv",
@@ -1944,12 +1998,12 @@
             "Placeholder": "Stapel auswählen"
           },
           "Enable": {
-            "Description": "Kartendaten aus Anki über AnkiConnect beziehen. Anki-Karten haben Vorrang vor mLearn-Karten",
+            "Description": "Kartendaten aus Anki über AnkiConnect beziehen. Anki-Karten haben Vorrang vor Sora 空-Karten",
             "Label": "Anki aktivieren"
           },
           "Failed": "Fehlgeschlagen",
           "FieldMapping": {
-            "Description": "Anki-Notizfelder den mLearn-Kartenfeldern zuordnen",
+            "Description": "Anki-Notizfelder den Sora 空-Kartenfeldern zuordnen",
             "Expression": {
               "Description": "Das Feld mit dem Wort oder Ausdruck",
               "Label": "Ausdrucksfeld"
@@ -2022,8 +2076,8 @@
             "Label": "Karten für neue Wörter erstellen"
           },
           "Enable": {
-            "Description": "Integriertes Wiederholungssystem von mLearn statt Anki verwenden",
-            "Label": "mLearn SRS verwenden"
+            "Description": "Integriertes Wiederholungssystem von Sora 空 statt Anki verwenden",
+            "Label": "Sora 空 SRS verwenden"
           },
           "LevelCardProportion": {
             "Description": "Anteil automatisch erstellter Karten aus Sprachstufen (0–1)",
@@ -2155,7 +2209,7 @@
         }
       },
       "UI": {
-        "Description": "mLearn anpassen",
+        "Description": "Sora 空 anpassen",
         "ResetConfirm": "Möchten Sie wirklich alle Einstellungen auf die Standardwerte zurücksetzen? Dies kann nicht rückgängig gemacht werden.",
         "ResetSuccess": "Einstellungen auf Standardwerte zurückgesetzt",
         "SaveError": "Einstellungen konnten nicht gespeichert werden",
@@ -2334,7 +2388,7 @@
     },
     "BrowserExtension": {
       "Title": "Browser-Erweiterung",
-      "Description": "Installieren Sie die mLearn Browser-Erweiterung, um die Videowiedergabe mit der App zu synchronisieren.",
+      "Description": "Installieren Sie die Sora 空 Browser-Erweiterung, um die Videowiedergabe mit der App zu synchronisieren.",
       "DetectedBrowsers": "Erkannte Browser",
       "Detecting": "Browser werden erkannt...",
       "DetectError": "Browsererkennung fehlgeschlagen. Bitte versuchen Sie es erneut.",
@@ -2596,9 +2650,9 @@
         "RoomClosed": "Der Raum wurde vom Host geschlossen.",
         "OpenRoomPanel": "Raum",
         "SignInRequiredTitle": "Anmeldung erforderlich",
-        "SignInRequiredMessage": "Melde dich mit deinem mLearn-Cloud-Konto an, um Raumcodes zu verwenden.",
+        "SignInRequiredMessage": "Melde dich mit deinem Sora 空-Cloud-Konto an, um Raumcodes zu verwenden.",
         "SignInModalTitle": "Anmelden für Gemeinsam ansehen",
-        "SignInHint": "Gib deine mLearn-Cloud-Anmeldedaten ein",
+        "SignInHint": "Gib deine Sora 空-Cloud-Anmeldedaten ein",
         "SignInCodeHint": "Falls du einen Gerätecode erhalten hast, gib ihn unten ein",
         "PeerJoinedSingular": "Ein Teilnehmer ist deinem Raum beigetreten",
         "PeerJoinedPlural": "{count} Teilnehmer sind deinem Raum beigetreten",
@@ -2819,7 +2873,7 @@
       }
     },
     "Menu": {
-      "About": "Über mLearn",
+      "About": "Über Sora 空",
       "BrowserExtension": {
         "Title": "Browser-Erweiterung",
         "InstallExtension": "Erweiterung installieren...",
@@ -2967,7 +3021,7 @@
       }
     },
     "Diagnostics": {
-      "Title": "mLearn Diagnostics",
+      "Title": "Sora 空 Diagnostics",
       "RunAllTests": "Run All Tests",
       "RunAgain": "Run Again",
       "Running": "Running…",
@@ -2978,7 +3032,7 @@
       "FilterPass": "Pass",
       "FilterFail": "Fail",
       "FilterSkip": "Skip",
-      "EmptyTitle": "Click \"Run All Tests\" to validate every feature in mLearn.",
+      "EmptyTitle": "Click \"Run All Tests\" to validate every feature in Sora 空.",
       "EmptyDescription": "This will test the Python backend, LLM providers, cloud connectivity, dictionaries, OCR, voice, storage, media protocols, and more — all using real services."
     },
     "Eula": {

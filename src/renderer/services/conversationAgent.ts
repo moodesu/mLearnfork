@@ -1912,11 +1912,13 @@ export function createConversationAgent(deps: AgentDeps): AgentInstance {
 
     bridge.llm.llmStream(messages, tools, tier);
 
-    // Timeout after 90 seconds
+    // Built-in CPU inference includes cold model loading and prompt evaluation.
+    const responseTimeoutMs = settingsObj.llmProvider === 'builtin' ? 300_000 : 90_000;
     setTimeout(() => {
       if (streamCleanup && !aborted && myRequestId === streamRequestId) {
         streamCleanup();
         streamCleanup = null;
+        bridge.llm.llmStreamAbort();
         if (accumulated) {
           conversationHistory.push({ role: 'assistant', content: accumulated });
           const finalVisibleContent = contentPrefix + accumulated;
@@ -1927,7 +1929,7 @@ export function createConversationAgent(deps: AgentDeps): AgentInstance {
           callbacks.onError('Response timed out');
         }
       }
-    }, 90_000);
+    }, responseTimeoutMs);
   }
 
   function processMessage(

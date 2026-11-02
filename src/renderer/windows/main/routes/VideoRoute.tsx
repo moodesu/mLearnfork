@@ -6,11 +6,12 @@
 import { Component, Show, createSignal, createEffect, onMount, onCleanup, createMemo } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { useSubtitles, useWatchTogether, useMediaStats } from '../../../hooks';
-import { isElectron as isElectronPlatform } from '../../../../shared/platform';
+import { isElectron as isElectronPlatform, getOS } from '../../../../shared/platform';
 import { useLocalization, useSettings, useLanguage, useFlashcards } from '../../../context';
 import { CloudReLoginModal } from '../../../components/cloud';
 import { WatchTogetherCodeModal, WatchTogetherModeModal } from '../../../components/watchTogether';
 import { VideoPlayer, VideoUnknownWordsSidebar } from '../../../components/video';
+import { MpvPlayer } from '../../../components/video/MpvPlayer';
 import type { VideoWordEntry } from '../../../components/video';
 import { Panel, Btn, NavBtn, VideoIcon, Spinner } from '../../../components/common';
 import { isLLMReady } from '../../../services/llmProvider';
@@ -23,6 +24,7 @@ import { getBridge } from '../../../../shared/bridges';
 import { isWordInLanguageScript } from '../../../../shared/utils/textUtils';
 import { captureVideoThumbnail, getRecentItems, getRecentProgressPercent, saveToRecentItems, updateRecentItemPlaybackTime, updateRecentItemPlaybackTimeByPath, updateRecentItemSubtitlePathByPath, updateRecentItemThumbnail, updateRecentItemThumbnailByPath, updateRecentItemProgress, updateRecentItemProgressByPath } from '../../../services/thumbnailService';
 import { captureVideoFrameForFlashcard } from '../../../services/flashcardImageCapture';
+import { sentenceFrameTime } from '../../../utils/mpvTranscript';
 import { computeWordLevelPercentages, computeGrammarLevelPercentages, assessMediaLevel } from '../../../utils/levelPercentages';
 import { buildCharacterContext } from '../../../utils/characterExtraction';
 import { buildWordHoverFlashcardContent, getAnkiEaseForStatus, numericToWordStatus } from '../../../components/subtitle/wordHoverHelpers';
@@ -145,7 +147,10 @@ export const VideoRoute: Component = () => {
   const [currentVideoName, setCurrentVideoName] = createSignal('');
   const [currentVideoDuration, setCurrentVideoDuration] = createSignal<number | null>(null);
   const [currentVideoPath, setCurrentVideoPath] = createSignal('');
-  const [, setCurrentSubtitlePath] = createSignal('');
+  const [currentSubtitlePath, setCurrentSubtitlePath] = createSignal('');
+  const canUseMpv = () => isElectronPlatform() && getOS() === 'linux';
+  const mpvSelected = () => canUseMpv() && (settings.videoPlaybackEngine ?? DEFAULT_SETTINGS.videoPlaybackEngine) === 'mpv';
+  const nativePlayback = () => mpvSelected() && !!currentVideoPath();
   const showWordSidebar = () => settings.rightSidebarOpen ?? DEFAULT_SETTINGS.rightSidebarOpen;
   const setShowWordSidebar = (open: boolean) => updateSetting('rightSidebarOpen', open);
   const [detectedAudioTracks, setDetectedAudioTracks] = createSignal<Array<{ index: number; label: string; language: string | null }>>([]);
@@ -362,7 +367,7 @@ export const VideoRoute: Component = () => {
     setDetectedSubtitleTracks([]);
     setActiveDetectedSubtitleTrack(null);
 
-    if (isElectronPlatform() && path) {
+    if (isElectronPlatform() && path && !mpvSelected()) {
       const tracks = await detectMediaTracks(url);
       if (tracks.audioTracks.length > 0 || tracks.subtitleTracks.length > 0) {
         setDetectedAudioTracks(
@@ -597,6 +602,8 @@ export const VideoRoute: Component = () => {
   });
 
   const addVideoWordFlashcard = async (entry: VideoWordEntry) => {
+    const nativePath = nativePlayback() ? currentVideoPath() : '';
+    const nativeTime = nativePath ? sentenceFrameTime(entry.subtitleStart, entry.subtitleEnd) : undefined;
     setAddingSidebarWords(prev => {
       const next = new Set(prev);
       next.add(entry.key);
@@ -615,6 +622,10 @@ export const VideoRoute: Component = () => {
       const wordStatus = flashcardCtx.getComprehensiveWordStatusSync(word, settings.language);
       const colourCodes = settings.colour_codes || {};
 
+      if (nativePath && (nativeTime === undefined || nativePath !== currentVideoPath() || !nativePlayback())) {
+        throw new Error('The source video changed or the selected sentence has no valid timestamp');
+      }
+
       const { content, ease } = await buildWordHoverFlashcardContent({
         token: entry.token,
         word,
@@ -626,7 +637,9 @@ export const VideoRoute: Component = () => {
         colourCodes,
         languageData: langCtx.currentLangData(),
         tokenize,
-        flashcardMediaType: settings.flashcardMediaType === 'video' ? 'video' : 'image',
+        useContextPhrase: true,
+        nativeTime,
+        flashcardMediaType: !nativePath && settings.flashcardMediaType === 'video' ? 'video' : 'image',
         srsLearningEase: settings.srsLearningThreshold / 1000,
         srsKnownEase: settings.known_ease_threshold / 1000,
       });
@@ -635,7 +648,7 @@ export const VideoRoute: Component = () => {
 
       // If video mode, clip and save the video segment
       log.info('[VideoRoute] addVideoWordFlashcard: flashcardMediaType=', settings.flashcardMediaType, 'videoSrc=', videoSrc(), 'subtitleStart=', entry.subtitleStart, 'subtitleEnd=', entry.subtitleEnd);
-      if (settings.flashcardMediaType === 'video' && videoSrc() && entry.subtitleStart != null && entry.subtitleEnd != null) {
+      if (!nativePath && settings.flashcardMediaType === 'video' && videoSrc() && entry.subtitleStart != null && entry.subtitleEnd != null) {
         const margin = (settings.flashcardVideoMargin ?? DEFAULT_SETTINGS.flashcardVideoMargin) / 1000;
         const start = Math.max(0, entry.subtitleStart - margin);
         const end = entry.subtitleEnd + margin;
@@ -659,14 +672,20 @@ export const VideoRoute: Component = () => {
         log.info('[VideoRoute] addVideoWordFlashcard: skipping video clip — condition not met');
       }
 
-      const imageUrl = await captureVideoFrameForFlashcard(cardId);
-      if (imageUrl) {
-        content.imageUrl = imageUrl;
+      if (nativePath) {
+        content.context = entry.contextPhrase;
+        content.source = nativePath;
+        content.extra = { sourcePath: nativePath, subtitleStart: entry.subtitleStart,
+          subtitleEnd: entry.subtitleEnd, screenshotTime: sentenceFrameTime(entry.subtitleStart, entry.subtitleEnd) };
+      } else {
+        const imageUrl = await captureVideoFrameForFlashcard(cardId);
+        if (imageUrl) content.imageUrl = imageUrl;
       }
 
       await flashcardCtx.addFlashcard(content, ease, undefined, settings.language);
     } catch (err) {
       log.error('Failed to add flashcard from video sidebar:', err);
+      showToast({ message: t('mlearn.WordHover.Errors.FailedToAddFlashcard', { error: String(err) }), variant: 'warning' });
     } finally {
       setAddingSidebarWords(prev => {
         const next = new Set(prev);
@@ -1358,6 +1377,7 @@ export const VideoRoute: Component = () => {
 
   const videoRouteClass = () => {
     const classes = ['video-route'];
+    if (nativePlayback()) classes.push('native-study');
     if (showWordSidebar() && !showDropZone()) classes.push('with-word-sidebar');
     return classes.join(' ');
   };
@@ -1373,6 +1393,20 @@ export const VideoRoute: Component = () => {
 
       {/* Back button */}
       <div class="video-nav">
+        <Show when={canUseMpv()}>
+          <label>
+            {t('mlearn.Mpv.Engine')}
+            <select value={settings.videoPlaybackEngine ?? DEFAULT_SETTINGS.videoPlaybackEngine}
+              disabled={watchTogether.isActive()}
+              onChange={event => {
+                subtitles.clearSubtitles();
+                updateSetting('videoPlaybackEngine', event.currentTarget.value as 'browser' | 'mpv');
+              }}>
+              <option value="browser">{t('mlearn.Mpv.Browser')}</option>
+              <option value="mpv">{t('mlearn.Mpv.Title')}</option>
+            </select>
+          </label>
+        </Show>
         <NavBtn class="back-button" onClick={goHome} title={t('mlearn.Video.Tooltip.GoHome')}>
           {t('mlearn.Video.UI.GoHome')}
         </NavBtn>
@@ -1425,6 +1459,7 @@ export const VideoRoute: Component = () => {
         }
       >
         <div class="video-player-container">
+          <Show when={nativePlayback()} fallback={
           <VideoPlayer
             src={videoSrc()}
             subtitleContent={subtitleContent()}
@@ -1446,6 +1481,16 @@ export const VideoRoute: Component = () => {
             activeDetectedSubtitleTrack={activeDetectedSubtitleTrack()}
             onSelectDetectedSubtitleTrack={handleSelectDetectedSubtitleTrack}
           />
+          }>
+            <MpvPlayer path={currentVideoPath()} subtitlePath={currentSubtitlePath()} subtitles={subtitles}
+              onOpenSubtitles={handleSelectSubtitle}
+              onStudyReset={() => { seenWords.clear(); setAccumulatedWords([]); }}
+              onToggleSidebar={() => setShowWordSidebar(!showWordSidebar())}
+              onState={state => {
+                setCurrentVideoTime(state.position);
+                setCurrentVideoDuration(state.duration || null);
+              }} />
+          </Show>
           <Show when={watchTogether.isAnticipatingPing()}>
             <div class="watch-together-anticipation-overlay">
               <Spinner size={32} text={t('mlearn.WatchTogether.AnticipatingPing')} />
@@ -1463,10 +1508,10 @@ export const VideoRoute: Component = () => {
         initialPosition={explainerPosition()}
       />
 
-      <SubtitleSync 
+      <Show when={!nativePlayback()}><SubtitleSync
         currentVideoTime={currentVideoTime}
         subtitles={subtitles.subtitles()}
-      />
+      /></Show>
 
       {/* Unknown words sidebar */}
       <Show when={showWordSidebar() && !showDropZone()}>

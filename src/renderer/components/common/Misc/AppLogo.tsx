@@ -1,4 +1,4 @@
-import logoUrl from '@/html/assets/icons/logo.png';
+import logoUrl from '@/html/assets/icons/sora.svg';
 import './AppLogo.css';
 
 interface AppLogoProps {
@@ -7,7 +7,7 @@ interface AppLogoProps {
 
 const AppLogo = (props: AppLogoProps) => {
   const size = () => props.size || '1em';
-  return <img src={logoUrl} alt="mLearn Logo" class="app-logo" style={{ width: size(), height: size() }} />;
+  return <img src={logoUrl} alt="Sora 空" class="app-logo" style={{ width: size(), height: size() }} />;
 };
 
 export default AppLogo;

@@ -1,10 +1,13 @@
 import { getBridge } from '../../shared/bridges';
 import { getLogger } from '../../shared/utils/logger';
 import { captureElementAndSave, type CanvasCaptureOptions } from './canvasCapture';
+import { getNativeVideoCapture } from './nativeVideoCapture';
 
 const log = getLogger('renderer.services.flashcardImageCapture');
 
 export interface FlashcardImageCaptureOptions extends CanvasCaptureOptions {
+  /** Native player: capture this media timestamp, not the current playback frame. */
+  nativeTime?: number;
   /** Timeout in ms to wait for source readiness before giving up. Default 500. */
   readinessTimeoutMs?: number;
   /** For reader images: optional anchor rectangle to crop around if full capture fails. */
@@ -142,6 +145,8 @@ export async function captureVideoFrameForFlashcard(
   cardId: string,
   options?: FlashcardImageCaptureOptions,
 ): Promise<string | null> {
+  const captureNative = getNativeVideoCapture();
+  if (captureNative) return await saveDataUrl(cardId, await captureNative(options?.nativeTime));
   const video = document.querySelector('video');
   if (!video) return null;
   return await captureFlashcardImage(video, cardId, options);

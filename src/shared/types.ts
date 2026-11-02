@@ -339,6 +339,7 @@ export interface Settings {
   showSubtitles?: boolean; // Toggle subtitle visibility
   showTranslation?: boolean; // Show translation line
   videoFit?: 'contain' | 'cover' | 'fill'; // Video object fit
+  videoPlaybackEngine?: 'browser' | 'mpv';
   overlayAutoPosition?: boolean; // Enable automatic overlay positioning from browser extension
   overlayTextMode?: boolean;
 
@@ -608,6 +609,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ocrEnabled: true,
   voiceEnabled: true,
   subsOffsetTime: 0,
+  videoPlaybackEngine: 'browser',
   immediateFetch: false,
   subtitleTheme: 'shadow',
   subtitle_font_size: 40,
@@ -2075,7 +2077,7 @@ export interface LLMResponse {
 // ============================================================================
 
 /** LLM backend provider */
-export type LLMProvider = 'builtin' | 'ollama' | 'cloud';
+export type LLMProvider = 'builtin' | 'ollama' | 'cloud' | 'manual';
 
 /** Cloud LLM model tier */
 export type CloudLLMTier = 'fast' | 'cheap';

@@ -1,5 +1,40 @@
 {
   "mlearn": {
+    "Mpv": {
+      "Embedded": "埋め込み動画（実験的）",
+      "VideoWidth": "動画の幅",
+      "EmbeddedHint": "動画の横にある操作ボタンとクリック可能な文を使ってください。別ウィンドウのプレーヤーに戻すには「埋め込み動画」をオフにします。",
+      "FullscreenApp": "アプリを全画面表示",
+      "VideoAreaUnavailable": "埋め込み動画の表示領域が準備できていません。もう一度お試しください。",
+      "Options": "トラック・タイミング・再生設定",
+      "SelectedLine": "選択した文",
+      "CurrentLine": "現在の文",
+      "Follow": "再生に追従",
+      "LookupHint": "単語をクリックするとGoldenDict-ngで検索します。マウスを重ねるとSora 空の辞書とカードを表示します。字幕の行を選ぶと一時停止して学習できます。",
+      "LookupWord": "単語または語句",
+      "GoldenDict": "GoldenDict-ng",
+      "Transcript": "字幕リスト",
+      "Reload": "リストを再読み込み",
+      "LoadingTranscript": "字幕リストを読み込み中…",
+      "NoTranscript": "テキスト字幕トラックを選択するか、外部字幕ファイルを開いてください。リストにはffmpegが必要です。",
+      "Title": "mpv（Linux試作版）",
+      "Engine": "プレーヤー",
+      "Browser": "ブラウザプレーヤー",
+      "WindowHint": "映像は別のmpvウィンドウで再生されます。再生操作と学習機能はこちらで利用できます。",
+      "Retry": "mpvを再度開く",
+      "Play": "再生",
+      "Pause": "一時停止",
+      "Fullscreen": "映像を全画面表示",
+      "Words": "単語サイドバー",
+      "Position": "再生位置",
+      "AudioTrack": "音声トラック",
+      "SubtitleTrack": "字幕トラック",
+      "Off": "オフ",
+      "Delay": "字幕の遅延（秒・正の値で遅らせる）",
+      "Volume": "音量",
+      "Speed": "再生速度",
+      "CaptureHint": "カード追加前に対象の文で一時停止してください。現在のmpv画面を保存します。この試作版では動画クリップや合成音声は対象外です。画像字幕はクリック可能なテキストにできません。"
+    },
     "Management": {
       "ChooseGroup": "クラスまたはグループを選択",
       "ChooseGroupDescription": "学習活動と学校ポリシーを適用する場所を選択してください。",
@@ -35,6 +70,18 @@
       "Title": "Restart Required"
     },
     "AI": {
+      "Manual": {
+        "Label": "Manual AI (copy and paste)",
+        "SettingsHint": "Explain prepares a prompt for ChatGPT, Claude, or Gemini. Copy it into your AI chat, then paste the JSON answer back. No local model or API key is needed. Manual mode supports Explain; the automatic tutor requires another provider.",
+        "Instructions": "Copy the prompt into ChatGPT, Claude, or Gemini. Paste its JSON answer below, then click Show explanation.",
+        "Prompt": "AI prompt",
+        "CopyPrompt": "Copy AI prompt",
+        "Copied": "Prompt copied",
+        "Response": "AI response",
+        "PastePlaceholder": "Paste the JSON answer from your AI chat here…",
+        "ShowResponse": "Show explanation",
+        "InvalidResponse": "Paste the complete JSON answer containing both explanations. Ask the AI to return the requested JSON format."
+      },
       "CloudUnreachable": "クラウドサービスに接続できません。接続を確認して、もう一度お試しください。",
       "DownloadModel": "モデルをダウンロード",
       "ModelNotDownloaded": "モデルはまだダウンロードされていません。",
@@ -224,17 +271,22 @@
       "WordsTab": "単語"
     },
     "About": {
-      "Description": "mLearnは没入型学習で言語を学ぶツールです。動画を見たり、漫画を読んだり、インテリジェントな字幕と間隔反復で自然に語彙を学べます。",
+      "SoraProject": "Sora project",
+      "SoraUpstream": "Original mLearn project",
+      "SoraAttribution": "Sora 空 is an independently maintained, modified version of mLearn by Adrian Vlasov. Original copyright © 2024–2026 Adrian Vlasov. Modifications maintained by moo. Licensed under the Sustainable Use License v1.0; original and third-party notices are retained.",
+      "SoraUpdates": "This fork uses manual builds. Upstream mLearn updates are disabled.",
+
+      "Description": "Sora 空は没入型学習で言語を学ぶツールです。動画を見たり、漫画を読んだり、インテリジェントな字幕と間隔反復で自然に語彙を学べます。",
       "Updates": {
         "Title": "アップデート",
         "Idle": "アップデートを確認できます。",
         "Checking": "アップデートを確認しています…",
-        "UpToDate": "mLearnは最新です。",
+        "UpToDate": "Sora 空は最新です。",
         "Available": "バージョン{version}を利用できます。",
         "Downloading": "バージョン{version}をダウンロードしています…",
         "Ready": "バージョン{version}をインストールできます。",
-        "Installing": "バージョン{version}をインストールするためmLearnを再起動しています…",
-        "Error": "mLearnをアップデートできませんでした。接続を確認して、もう一度お試しください。",
+        "Installing": "バージョン{version}をインストールするためSora 空を再起動しています…",
+        "Error": "Sora 空をアップデートできませんでした。接続を確認して、もう一度お試しください。",
         "CheckError": "アップデートを確認できませんでした。接続を確認して、もう一度お試しください。",
         "DownloadError": "アップデートをダウンロードできませんでした。接続を確認して、もう一度お試しください。",
         "InstallError": "アップデートを開始できませんでした。もう一度再起動するか、ダウンロードページを開いてください。",
@@ -246,7 +298,7 @@
         "Restart": "再起動してアップデート",
         "DownloadPage": "ダウンロードページを開く",
         "AutomaticDownloads": "アップデートを自動的にダウンロード",
-        "AutomaticDownloadsDescription": "検証済みのアップデートをバックグラウンドでダウンロードし、mLearnの再起動時にインストールします。",
+        "AutomaticDownloadsDescription": "検証済みのアップデートをバックグラウンドでダウンロードし、Sora 空の再起動時にインストールします。",
         "WhatsNew": "新機能",
         "AvailableTitle": "アップデートがあります",
         "ReadyTitle": "アップデートの準備ができました"
@@ -262,7 +314,7 @@
         "UpDown": "音量調整"
       },
       "Licenses": "ライセンス",
-      "Title": "mLearn",
+      "Title": "Sora 空",
       "VersionLabel": "バージョン {version}",
       "Website": "ウェブサイト"
     },
@@ -709,7 +761,7 @@
         "BackendStopped": "バックエンドサーバーが予期せず停止しました。アプリケーションを再起動してください。",
         "FileNotFound": "必要なファイルが見つかりません。アプリケーションを再インストールしてください。",
         "PermissionDenied": "権限が拒否されました。システムの権限を確認するか、管理者権限でアプリケーションを実行してください。",
-        "PortInUse": "別のアプリケーションが必要なポートを使用しています。他のmLearnインスタンスを閉じるか、コンピュータを再起動してください。"
+        "PortInUse": "別のアプリケーションが必要なポートを使用しています。他のSora 空インスタンスを閉じるか、コンピュータを再起動してください。"
       },
       "Quit": "終了",
       "ShowDetails": "詳細を表示",
@@ -722,6 +774,8 @@
       }
     },
     "Explainer": {
+      "Meaning": "意味",
+      "InThisSentence": "この文での意味",
       "Explanation": "解説",
       "GenerationFailed": "AI解説を生成できませんでした。再生成してください。",
       "GeneratedBy": "生成元: {provider}",
@@ -945,7 +999,7 @@
         "GeneratingCode": "接続コードを生成中...",
         "LoadingLibraries": "ライブラリを読み込み中...",
         "PointCamera": "カメラをQRコードに向けてください...",
-        "QRHint": "mLearnモバイルアプリでQRコードをスキャンして同期",
+        "QRHint": "Sora 空モバイルアプリでQRコードをスキャンして同期",
         "ScanQRInstead": "QRをスキャン",
         "ShowQRInstead": "QRを表示",
         "SyncedSuccessfully": "フラッシュカードの同期が完了しました！",
@@ -1004,7 +1058,7 @@
         "SaveChanges": "変更を保存"
       },
       "Add": "追加",
-      "AppName": "mLearn",
+      "AppName": "Sora 空",
       "Aria": {
         "CloseAlert": "アラートを閉じる",
         "CloseModal": "モーダルを閉じる",
@@ -1083,7 +1137,7 @@
           "Title": "リーダー"
         },
         "Settings": {
-          "Description": "mLearnをカスタマイズする",
+          "Description": "Sora 空をカスタマイズする",
           "Title": "設定"
         },
         "Video": {
@@ -1125,7 +1179,7 @@
         "ChangeLanguage": "言語を変更",
         "ContinueLearning": "学習を続ける",
         "LearningLanguage": "{language}を学習中",
-        "Title": "mLearn",
+        "Title": "Sora 空",
         "TitleDescription": "下の項目を選択して始めましょう"
       }
     },
@@ -1150,11 +1204,11 @@
       "Components": {
         "ExplainAi": {
           "Description": "ローカルLLMニューラルネットワークをインストールします。チェックを外すと約3 GBの依存関係をスキップします。",
-          "Title": "mLearn Explain AIモジュールをインストール"
+          "Title": "Sora 空 Explain AIモジュールをインストール"
         },
         "Reader": {
           "Description": "漫画/画像を読むためのOCR機能をインストールします。チェックを外すと約2 GBの依存関係をスキップします。",
-          "Title": "mLearnリーダーモジュールをインストール"
+          "Title": "Sora 空リーダーモジュールをインストール"
         },
         "Voice": {
           "Description": "音声認識、テキスト読み上げ、音声クローンをインストールします。チェックを外すと約4 GBの依存関係をスキップします。",
@@ -1162,10 +1216,10 @@
         }
       },
       "Instructions": {
-        "ChooseComponents": "学習する言語と、mLearnで表示する言語を選択してください。",
+        "ChooseComponents": "学習する言語と、Sora 空で表示する言語を選択してください。",
         "ClickToBegin": "インストールをクリックして開始します。",
         "DownloadNote": "すべてのダウンロードは自動的に処理されます。安定した接続を推奨します。",
-        "ForgetSomething": "インストールし忘れた場合、mLearnを削除してインストーラーを再起動してください。",
+        "ForgetSomething": "インストールし忘れた場合、Sora 空を削除してインストーラーを再起動してください。",
         "LanguageUnlocks": "言語データは、明示的に開始した場合にのみインストールされます。"
       },
       "DictionaryTarget": {
@@ -1194,7 +1248,7 @@
       },
       "SetupSentence": {
         "LearnPrefix": "学習したい言語は",
-        "AppLanguagePrefix": "mLearnの表示言語は",
+        "AppLanguagePrefix": "Sora 空の表示言語は",
         "AppLanguageSuffix": "です。",
         "DictionaryPrefix": "辞書の定義言語は",
         "LoadingLanguages": "利用可能な言語を読み込んでいます…"
@@ -1684,7 +1738,7 @@
           "Update": "言語データを更新",
           "UpdateRequired": "言語データの更新があります",
           "MissingRequired": "言語データが必要です",
-          "RequiresAppVersion": "mLearn {version} 以降が必要です"
+          "RequiresAppVersion": "Sora 空 {version} 以降が必要です"
         },
         "DictionaryTarget": {
           "Description": "辞書の定義に使う言語を選択",
@@ -1721,7 +1775,7 @@
         "Permissions": "権限",
         "Empty": {
           "Title": "プラグインはまだインストールされていません",
-          "Description": "mLearn を拡張するにはプラグインパッケージをインストールしてください。"
+          "Description": "Sora 空 を拡張するにはプラグインパッケージをインストールしてください。"
         },
         "Status": {
           "active": "有効",
@@ -2022,8 +2076,8 @@
             "Label": "未見カードを作成"
           },
           "Enable": {
-            "Description": "Ankiの代わりにmLearnの内蔵間隔反復システムを使用",
-            "Label": "mLearn SRSを使用"
+            "Description": "Ankiの代わりにSora 空の内蔵間隔反復システムを使用",
+            "Label": "Sora 空 SRSを使用"
           },
           "LevelCardProportion": {
             "Description": "自動作成カードのうち言語レベル由来の割合（0〜1）",
@@ -2155,7 +2209,7 @@
         }
       },
       "UI": {
-        "Description": "mLearnをカスタマイズ",
+        "Description": "Sora 空をカスタマイズ",
         "ResetConfirm": "すべての設定をデフォルトにリセットしてもよろしいですか？この操作は取り消せません。",
         "ResetSuccess": "設定をデフォルトにリセットしました",
         "SaveError": "設定の保存に失敗しました",
@@ -2334,7 +2388,7 @@
     },
     "BrowserExtension": {
       "Title": "ブラウザ拡張機能",
-      "Description": "mLearnブラウザ拡張機能をインストールして、動画の再生をアプリと同期します。",
+      "Description": "Sora 空ブラウザ拡張機能をインストールして、動画の再生をアプリと同期します。",
       "DetectedBrowsers": "検出されたブラウザ",
       "Detecting": "ブラウザを検出中...",
       "DetectError": "ブラウザの検出に失敗しました。もう一度お試しください。",
@@ -2596,9 +2650,9 @@
         "RoomClosed": "ホストがルームを閉じました。",
         "OpenRoomPanel": "ルーム",
         "SignInRequiredTitle": "サインインが必要",
-        "SignInRequiredMessage": "ルームコードを使用するには、mLearn Cloudアカウントでサインインしてください。",
+        "SignInRequiredMessage": "ルームコードを使用するには、Sora 空 Cloudアカウントでサインインしてください。",
         "SignInModalTitle": "一緒に視聴のサインイン",
-        "SignInHint": "mLearn Cloudの認証情報を入力してください",
+        "SignInHint": "Sora 空 Cloudの認証情報を入力してください",
         "SignInCodeHint": "デバイスコードを受け取った場合は、以下に入力してください",
         "PeerJoinedSingular": "参加者がルームに参加しました",
         "PeerJoinedPlural": "{count}人の参加者がルームに参加しました",
@@ -2819,7 +2873,7 @@
       }
     },
     "Menu": {
-      "About": "mLearnについて",
+      "About": "Sora 空について",
       "BrowserExtension": {
         "Title": "ブラウザ拡張機能",
         "InstallExtension": "拡張機能をインストール...",
@@ -2967,7 +3021,7 @@
       }
     },
     "Diagnostics": {
-      "Title": "mLearn Diagnostics",
+      "Title": "Sora 空 Diagnostics",
       "RunAllTests": "Run All Tests",
       "RunAgain": "Run Again",
       "Running": "Running…",
@@ -2978,7 +3032,7 @@
       "FilterPass": "Pass",
       "FilterFail": "Fail",
       "FilterSkip": "Skip",
-      "EmptyTitle": "Click \"Run All Tests\" to validate every feature in mLearn.",
+      "EmptyTitle": "Click \"Run All Tests\" to validate every feature in Sora 空.",
       "EmptyDescription": "This will test the Python backend, LLM providers, cloud connectivity, dictionaries, OCR, voice, storage, media protocols, and more — all using real services."
     },
     "Eula": {

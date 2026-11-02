@@ -183,3 +183,17 @@
 .dark .grammar-point {
   background: rgba(0, 0, 0, 0.3);
 }
+
+.explainer-word-reading {
+  font-size: 1.4em;
+  line-height: 2;
+  color: var(--text-primary);
+}
+
+.explainer-word-reading ruby {
+  ruby-position: over;
+}
+
+.explainer-word-reading rt {
+  font-size: 0.55em;
+}

@@ -7,7 +7,7 @@ import { tokensToColoredHtml } from '../../utils/subtitleParsing';
 import { getLogger } from '../../../shared/utils/logger';
 import { getBridge } from '../../../shared/bridges';
 import { generateUUID } from '../../services/srsAlgorithm';
-import { captureElementAndSave } from '../../services/canvasCapture';
+import { captureVideoFrameForFlashcard } from '../../services/flashcardImageCapture';
 import { extractDefinitionValues, extractReadingValue } from '../../utils/translationCacheParsers';
 import {
   extractProsodyFromTranslationData,
@@ -57,6 +57,9 @@ export interface BuildWordHoverFlashcardContentParams {
   /** Built-in SRS ease for Known status (float, e.g. 1.8) */
   srsKnownEase?: number;
   screenshotDataUrl?: string;
+  /** Re-tokenize this entry's saved sentence instead of scraping the live subtitle DOM. */
+  useContextPhrase?: boolean;
+  nativeTime?: number;
 }
 
 export function numericToWordStatus(num: number): WordStatus {
@@ -294,10 +297,8 @@ export function resolveProsodyForHover(
   );
 }
 
-async function screenshotVideo(cardId: string): Promise<string> {
-  const video = document.querySelector('video') as HTMLVideoElement | null;
-  if (!video || video.readyState < 2) return '';
-  return (await captureElementAndSave(video, cardId)) ?? '';
+async function screenshotVideo(cardId: string, nativeTime?: number): Promise<string> {
+  return (await captureVideoFrameForFlashcard(cardId, { nativeTime })) ?? '';
 }
 
 function extractExampleHtml(wordUuid: string | undefined, fallbackText: string): string {
@@ -473,16 +474,16 @@ export async function buildWordHoverFlashcardContent(params: BuildWordHoverFlash
   } else if (params.isOcr) {
     screenshot = await captureOcrScreenshot(params.anchorRect, params.ocrImageElement, params.ocrCropPadding, cardId);
   } else {
-    screenshot = await screenshotVideo(cardId);
+    screenshot = await screenshotVideo(cardId, params.nativeTime);
   }
 
   let exampleHtml: string;
-  if (params.isOcr) {
+  if (params.isOcr || params.useContextPhrase) {
     const contextPhrase = params.contextPhrase || '';
     if (contextPhrase && contextPhrase !== '-') {
       try {
         const tokens = await params.tokenize(contextPhrase);
-        exampleHtml = tokensToColoredHtml(tokens, params.colourCodes, word, params.languageData);
+        exampleHtml = tokens.length ? tokensToColoredHtml(tokens, params.colourCodes, word, params.languageData) : contextPhrase;
       } catch (e) {
         log.error("error", e);
         exampleHtml = contextPhrase;

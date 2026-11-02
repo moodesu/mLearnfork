@@ -1,5 +1,40 @@
 {
   "mlearn": {
+    "Mpv": {
+      "Embedded": "内嵌视频（实验性）",
+      "VideoWidth": "视频宽度",
+      "EmbeddedHint": "请使用视频旁的控件和可点击的句子。取消勾选“内嵌视频”即可恢复独立播放器。",
+      "FullscreenApp": "应用全屏",
+      "VideoAreaUnavailable": "内嵌视频区域尚未准备好，请重试。",
+      "Options": "音轨、字幕时间与播放设置",
+      "SelectedLine": "所选句子",
+      "CurrentLine": "当前句子",
+      "Follow": "跟随播放",
+      "LookupHint": "点击单词以使用GoldenDict-ng；悬停以查看Sora 空词典和卡片。选择字幕行以暂停并学习。",
+      "LookupWord": "单词或短语",
+      "GoldenDict": "GoldenDict-ng",
+      "Transcript": "字幕列表",
+      "Reload": "重新加载列表",
+      "LoadingTranscript": "正在加载字幕列表…",
+      "NoTranscript": "请选择文本字幕轨道或打开外部字幕文件。字幕列表需要ffmpeg。",
+      "Title": "mpv（Linux 原型）",
+      "Engine": "播放器",
+      "Browser": "浏览器播放器",
+      "WindowHint": "视频在独立的 mpv 窗口中播放。播放控制和学习功能保留在此处。",
+      "Retry": "重新打开 mpv",
+      "Play": "播放",
+      "Pause": "暂停",
+      "Fullscreen": "视频全屏",
+      "Words": "单词侧栏",
+      "Position": "播放位置",
+      "AudioTrack": "音轨",
+      "SubtitleTrack": "字幕轨",
+      "Off": "关闭",
+      "Delay": "字幕延迟（秒；正值表示延后）",
+      "Volume": "音量",
+      "Speed": "播放速度",
+      "CaptureHint": "添加卡片前请暂停在目标句子处。卡片使用当前 mpv 截图；此原型不包含视频片段或合成语音。图像字幕无法提供可点击的文本。"
+    },
     "Management": {
       "ChooseGroup": "选择班级或小组",
       "ChooseGroupDescription": "选择你的活动和学校策略所适用的班级或小组。",
@@ -35,6 +70,18 @@
       "Title": "Restart Required"
     },
     "AI": {
+      "Manual": {
+        "Label": "Manual AI (copy and paste)",
+        "SettingsHint": "Explain prepares a prompt for ChatGPT, Claude, or Gemini. Copy it into your AI chat, then paste the JSON answer back. No local model or API key is needed. Manual mode supports Explain; the automatic tutor requires another provider.",
+        "Instructions": "Copy the prompt into ChatGPT, Claude, or Gemini. Paste its JSON answer below, then click Show explanation.",
+        "Prompt": "AI prompt",
+        "CopyPrompt": "Copy AI prompt",
+        "Copied": "Prompt copied",
+        "Response": "AI response",
+        "PastePlaceholder": "Paste the JSON answer from your AI chat here…",
+        "ShowResponse": "Show explanation",
+        "InvalidResponse": "Paste the complete JSON answer containing both explanations. Ask the AI to return the requested JSON format."
+      },
       "CloudUnreachable": "云服务无法连接。请检查您的网络连接后重试。",
       "DownloadModel": "下载模型",
       "ModelNotDownloaded": "模型尚未下载。",
@@ -224,20 +271,25 @@
       "WordsTab": "单词"
     },
     "About": {
-      "Description": "mLearn 是一款通过沉浸式学习帮助您学习语言的工具。观看视频、阅读漫画，通过智能字幕和间隔重复自然地学习词汇。",
+      "SoraProject": "Sora project",
+      "SoraUpstream": "Original mLearn project",
+      "SoraAttribution": "Sora 空 is an independently maintained, modified version of mLearn by Adrian Vlasov. Original copyright © 2024–2026 Adrian Vlasov. Modifications maintained by moo. Licensed under the Sustainable Use License v1.0; original and third-party notices are retained.",
+      "SoraUpdates": "This fork uses manual builds. Upstream mLearn updates are disabled.",
+
+      "Description": "Sora 空 是一款通过沉浸式学习帮助您学习语言的工具。观看视频、阅读漫画，通过智能字幕和间隔重复自然地学习词汇。",
       "Updates": {
         "Title": "更新",
         "Idle": "可以检查更新。",
         "Checking": "正在检查更新…",
-        "UpToDate": "mLearn 已是最新版本。",
+        "UpToDate": "Sora 空 已是最新版本。",
         "Available": "版本 {version} 可用。",
         "Downloading": "正在下载版本 {version}…",
         "Ready": "版本 {version} 已准备好安装。",
-        "Installing": "正在重启 mLearn 以安装版本 {version}…",
-        "Error": "mLearn 无法更新。请检查网络连接后重试。",
-        "CheckError": "mLearn 无法检查更新。请检查网络连接后重试。",
-        "DownloadError": "mLearn 无法下载更新。请检查网络连接后重试。",
-        "InstallError": "mLearn 无法启动更新。请再次尝试重启，或打开下载页面。",
+        "Installing": "正在重启 Sora 空 以安装版本 {version}…",
+        "Error": "Sora 空 无法更新。请检查网络连接后重试。",
+        "CheckError": "Sora 空 无法检查更新。请检查网络连接后重试。",
+        "DownloadError": "Sora 空 无法下载更新。请检查网络连接后重试。",
+        "InstallError": "Sora 空 无法启动更新。请再次尝试重启，或打开下载页面。",
         "UpdateFailedTitle": "更新失败",
         "Development": "自动更新可用于已安装的桌面版本。",
         "ManualDownload": "此安装版本无法自行更新。请从网站下载最新版本。",
@@ -246,7 +298,7 @@
         "Restart": "重启并更新",
         "DownloadPage": "打开下载页面",
         "AutomaticDownloads": "自动下载更新",
-        "AutomaticDownloadsDescription": "在后台下载经过验证的更新，并在 mLearn 重启时安装。",
+        "AutomaticDownloadsDescription": "在后台下载经过验证的更新，并在 Sora 空 重启时安装。",
         "WhatsNew": "更新内容",
         "AvailableTitle": "有可用更新",
         "ReadyTitle": "更新已准备就绪"
@@ -262,7 +314,7 @@
         "UpDown": "音量控制"
       },
       "Licenses": "许可协议",
-      "Title": "mLearn",
+      "Title": "Sora 空",
       "VersionLabel": "版本 {version}",
       "Website": "网站"
     },
@@ -709,7 +761,7 @@
         "BackendStopped": "后端服务器意外停止。请重新启动应用程序。",
         "FileNotFound": "未找到所需文件。请尝试重新安装应用程序。",
         "PermissionDenied": "权限被拒绝。请检查系统权限或以管理员权限运行应用程序。",
-        "PortInUse": "另一个应用程序正在使用所需端口。请关闭其他 mLearn 实例或重新启动计算机。"
+        "PortInUse": "另一个应用程序正在使用所需端口。请关闭其他 Sora 空 实例或重新启动计算机。"
       },
       "Quit": "退出",
       "ShowDetails": "显示详情",
@@ -722,6 +774,8 @@
       }
     },
     "Explainer": {
+      "Meaning": "含义",
+      "InThisSentence": "在此句中的含义",
       "Explanation": "解释",
       "GenerationFailed": "无法生成 AI 解释。请尝试重新生成。",
       "GeneratedBy": "由{provider}生成",
@@ -945,7 +999,7 @@
         "GeneratingCode": "正在生成连接代码…",
         "LoadingLibraries": "正在加载库…",
         "PointCamera": "将相机对准二维码…",
-        "QRHint": "使用 mLearn 移动应用扫描以同步闪卡",
+        "QRHint": "使用 Sora 空 移动应用扫描以同步闪卡",
         "ScanQRInstead": "改为扫描二维码",
         "ShowQRInstead": "改为显示二维码",
         "SyncedSuccessfully": "闪卡同步成功！",
@@ -1004,7 +1058,7 @@
         "SaveChanges": "保存更改"
       },
       "Add": "添加",
-      "AppName": "mLearn",
+      "AppName": "Sora 空",
       "Aria": {
         "CloseAlert": "关闭提示",
         "CloseModal": "关闭模态框",
@@ -1083,7 +1137,7 @@
           "Title": "阅读器"
         },
         "Settings": {
-          "Description": "按您的喜好配置 mLearn",
+          "Description": "按您的喜好配置 Sora 空",
           "Title": "设置"
         },
         "Video": {
@@ -1125,7 +1179,7 @@
         "ChangeLanguage": "更改语言",
         "ContinueLearning": "继续学习",
         "LearningLanguage": "正在学习{language}",
-        "Title": "mLearn",
+        "Title": "Sora 空",
         "TitleDescription": "选择下方选项开始学习"
       }
     },
@@ -1150,11 +1204,11 @@
       "Components": {
         "ExplainAi": {
           "Description": "安装本地 LLM 神经网络。取消勾选可跳过约 3 GB 的依赖项。",
-          "Title": "安装 mLearn 解释 AI 模块"
+          "Title": "安装 Sora 空 解释 AI 模块"
         },
         "Reader": {
           "Description": "安装用于阅读漫画/图片的 OCR 功能。取消勾选可跳过约 2 GB 的依赖项。",
-          "Title": "安装 mLearn 阅读器模块"
+          "Title": "安装 Sora 空 阅读器模块"
         },
         "Voice": {
           "Description": "安装语音识别、文本转语音和语音克隆。取消勾选可跳过约 4 GB 的依赖项。",
@@ -1162,7 +1216,7 @@
         }
       },
       "Instructions": {
-        "ChooseComponents": "选择你想学习的语言，以及 mLearn 使用的显示语言。",
+        "ChooseComponents": "选择你想学习的语言，以及 Sora 空 使用的显示语言。",
         "ClickToBegin": "点击安装开始。",
         "DownloadNote": "所有下载将自动处理。建议使用稳定的网络连接。",
         "ForgetSomething": "安装完成后无法添加组件。请现在选择所有需要的组件。",
@@ -1194,7 +1248,7 @@
       },
       "SetupSentence": {
         "LearnPrefix": "我想学习",
-        "AppLanguagePrefix": "并使用 mLearn 的显示语言",
+        "AppLanguagePrefix": "并使用 Sora 空 的显示语言",
         "AppLanguageSuffix": "。",
         "DictionaryPrefix": "词典释义语言为",
         "LoadingLanguages": "正在加载可用语言…"
@@ -1684,7 +1738,7 @@
           "Update": "更新语言数据",
           "UpdateRequired": "有可用的语言数据更新",
           "MissingRequired": "需要语言数据",
-          "RequiresAppVersion": "需要 mLearn {version} 或更高版本"
+          "RequiresAppVersion": "需要 Sora 空 {version} 或更高版本"
         },
         "DictionaryTarget": {
           "Description": "选择词典释义使用的语言",
@@ -1744,7 +1798,7 @@
         "Permissions": "权限",
         "Empty": {
           "Title": "未安装插件",
-          "Description": "安装插件包以扩展 mLearn。"
+          "Description": "安装插件包以扩展 Sora 空。"
         },
         "Status": {
           "active": "活跃",
@@ -1967,12 +2021,12 @@
             "Placeholder": "选择牌组"
           },
           "Enable": {
-            "Description": "通过 AnkiConnect 从 Anki 获取闪卡数据。Anki 卡片优先于 mLearn 内置卡片",
+            "Description": "通过 AnkiConnect 从 Anki 获取闪卡数据。Anki 卡片优先于 Sora 空 内置卡片",
             "Label": "启用 Anki"
           },
           "Failed": "失败",
           "FieldMapping": {
-            "Description": "将 Anki 笔记字段映射到 mLearn 闪卡字段",
+            "Description": "将 Anki 笔记字段映射到 Sora 空 闪卡字段",
             "Expression": {
               "Description": "包含单词或表达的字段",
               "Label": "表达字段"
@@ -2045,8 +2099,8 @@
             "Label": "创建未见过单词的卡片"
           },
           "Enable": {
-            "Description": "使用 mLearn 内置间隔重复系统而非 Anki",
-            "Label": "使用 mLearn SRS"
+            "Description": "使用 Sora 空 内置间隔重复系统而非 Anki",
+            "Label": "使用 Sora 空 SRS"
           },
           "LevelCardProportion": {
             "Description": "从语言等级自动创建的卡片比例（0-1）",
@@ -2178,7 +2232,7 @@
         }
       },
       "UI": {
-        "Description": "按您的偏好配置 mLearn",
+        "Description": "按您的偏好配置 Sora 空",
         "ResetConfirm": "确定要将所有设置重置为默认值吗？此操作无法撤销。",
         "ResetSuccess": "设置已重置为默认值",
         "SaveError": "保存设置失败",
@@ -2334,7 +2388,7 @@
     },
     "BrowserExtension": {
       "Title": "浏览器扩展",
-      "Description": "安装 mLearn 浏览器扩展以将视频播放与应用同步。",
+      "Description": "安装 Sora 空 浏览器扩展以将视频播放与应用同步。",
       "DetectedBrowsers": "检测到的浏览器",
       "Detecting": "正在检测浏览器…",
       "DetectError": "检测浏览器失败。请重试。",
@@ -2596,9 +2650,9 @@
         "RoomClosed": "房间已被主持人关闭。",
         "OpenRoomPanel": "房间",
         "SignInRequiredTitle": "需要登录",
-        "SignInRequiredMessage": "使用您的 mLearn 云账户登录以使用房间码。",
+        "SignInRequiredMessage": "使用您的 Sora 空 云账户登录以使用房间码。",
         "SignInModalTitle": "登录以使用一起看",
-        "SignInHint": "输入您的 mLearn 云凭证",
+        "SignInHint": "输入您的 Sora 空 云凭证",
         "SignInCodeHint": "如果您收到设备码，请在下方输入",
         "PeerJoinedSingular": "有对等端加入了您的房间",
         "PeerJoinedPlural": "{count} 个对等端加入了您的房间",
@@ -2819,7 +2873,7 @@
       }
     },
     "Menu": {
-      "About": "关于 mLearn",
+      "About": "关于 Sora 空",
       "BrowserExtension": {
         "Title": "浏览器扩展",
         "InstallExtension": "安装扩展…",
@@ -2967,7 +3021,7 @@
       }
     },
     "Diagnostics": {
-      "Title": "mLearn 诊断",
+      "Title": "Sora 空 诊断",
       "RunAllTests": "运行所有测试",
       "RunAgain": "重新运行",
       "Running": "运行中…",
@@ -2978,7 +3032,7 @@
       "FilterPass": "通过",
       "FilterFail": "失败",
       "FilterSkip": "跳过",
-      "EmptyTitle": "点击“运行所有测试”以验证 mLearn 中的所有功能。",
+      "EmptyTitle": "点击“运行所有测试”以验证 Sora 空 中的所有功能。",
       "EmptyDescription": "这将测试 Python 后端、LLM 提供商、云连接、词典、OCR、语音、存储、媒体协议等 — 全部使用真实服务。"
     },
     "Eula": {

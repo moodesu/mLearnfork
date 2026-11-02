@@ -391,6 +391,7 @@ export interface KVStoreBridge {
 // ============================================================================
 
 export interface PlatformBridge {
+  mpv: import('../mpv').MpvBridge;
   settings: SettingsBridge;
   flashcards: FlashcardBridge;
   plugins: PluginBridge;

@@ -17,6 +17,7 @@ const log = getLogger('electron.builtinLLMService');
 
 const MODEL_DIR_NAME = 'models';
 const IDLE_UNLOAD_MS = 10 * 60 * 1000; // 10 minutes
+const BUILTIN_CONTEXT_SIZE = 8192;
 
 // Dynamic imports for node-llama-cpp (ESM module in CJS context)
 let llamaCppModule: typeof import('node-llama-cpp') | null = null;
@@ -31,6 +32,24 @@ let isDownloading = false;
 let downloadProgress = 0;
 let downloadedBytes = 0;
 let expectedBytes = 0;
+
+/**
+ * Safely send an IPC message to a renderer, guarding against a destroyed
+ * webContents. Sending to a destroyed renderer throws "Object has been
+ * destroyed" as an unhandled rejection and kills the LLM stream — e.g. when
+ * the user navigates away, closes the chat, or the idle unload timer fires
+ * mid-generation.
+ */
+function safeSend(sender: Electron.WebContents, channel: string, payload: unknown): void {
+  if (!sender || sender.isDestroyed()) {
+    return;
+  }
+  try {
+    sender.send(channel, payload);
+  } catch {
+    // Renderer destroyed mid-send — ignore.
+  }
+}
 
 function getModelsDir(): string {
   return path.join(app.getPath('userData'), MODEL_DIR_NAME);
@@ -92,12 +111,12 @@ async function downloadModel(
         downloadedBytes = progress.downloadedBytes;
         expectedBytes = progress.expectedBytes;
         downloadProgress = progress.progress;
-        sender.send(IPC_CHANNELS.LLM_DOWNLOAD_PROGRESS, getModelStatus(modelFile));
+        safeSend(sender, IPC_CHANNELS.LLM_DOWNLOAD_PROGRESS, getModelStatus(modelFile));
       }
     );
     isDownloading = false;
     downloadProgress = 1;
-    sender.send(IPC_CHANNELS.LLM_DOWNLOAD_PROGRESS, getModelStatus(modelFile));
+    safeSend(sender, IPC_CHANNELS.LLM_DOWNLOAD_PROGRESS, getModelStatus(modelFile));
   } catch (err) {
     log.error('Model download failed', err as Error);
     isDownloading = false;
@@ -129,8 +148,12 @@ async function ensureModelLoaded(modelFile?: string): Promise<void> {
     llamaInstance = await llamaCpp.getLlama();
   }
 
+  const loadStart = Date.now();
+  log.info('Loading built-in model', { modelFile: path.basename(modelPath), gpu: llamaInstance.gpu });
   loadedModel = await llamaInstance.loadModel({ modelPath });
-  modelContext = await loadedModel.createContext();
+  log.info('Built-in model loaded', { elapsedMs: Date.now() - loadStart });
+  modelContext = await loadedModel.createContext({ contextSize: BUILTIN_CONTEXT_SIZE });
+  log.info('Built-in context ready', { contextSize: BUILTIN_CONTEXT_SIZE, elapsedMs: Date.now() - loadStart });
 
   resetIdleTimer();
 }
@@ -186,7 +209,7 @@ async function streamChat(
   // The last message should be the user prompt
   const lastUserMsg = conversationMessages[conversationMessages.length - 1];
   if (!lastUserMsg || lastUserMsg.role !== 'user') {
-    session.dispose?.();
+    session.dispose({ disposeSequence: true });
     throw new Error('No user message found');
   }
 
@@ -234,7 +257,7 @@ async function streamChat(
         const chunk: LLMStreamChunk = {
           toolCalls: [toolCall],
         };
-        sender.send(IPC_CHANNELS.LLM_STREAM_CHUNK, chunk);
+        safeSend(sender, IPC_CHANNELS.LLM_STREAM_CHUNK, chunk);
 
         // Return a simple acknowledgment — the tool is "executed" on the renderer side
         return 'Tool executed successfully';
@@ -254,19 +277,21 @@ async function streamChat(
         const chunk: LLMStreamChunk = {
           content: text,
         };
-        sender.send(IPC_CHANNELS.LLM_STREAM_CHUNK, chunk);
+        safeSend(sender, IPC_CHANNELS.LLM_STREAM_CHUNK, chunk);
       },
       maxTokens: 2048,
       temperature: 0.3,
     };
 
+    log.info('Built-in prompt evaluation started');
     const response = await session.prompt(lastUserMsg.content, promptOptions);
+    log.info('Built-in prompt completed', { elapsedMs: Date.now() - startTime, tokenCount });
 
     if (tokenCount === 0 && response) {
       // node-llama-cpp may suppress onTextChunk for think-tag content;
       // forward the full response so the renderer can process it
       const fallbackChunk: LLMStreamChunk = { content: response };
-      sender.send(IPC_CHANNELS.LLM_STREAM_CHUNK, fallbackChunk);
+      safeSend(sender, IPC_CHANNELS.LLM_STREAM_CHUNK, fallbackChunk);
     }
 
     const totalTime = Date.now() - startTime;
@@ -280,23 +305,23 @@ async function streamChat(
       totalDuration: totalTime * 1_000_000, // convert to nanoseconds
       promptEvalDuration: ttft * 1_000_000,
     };
-    sender.send(IPC_CHANNELS.LLM_STREAM_CHUNK, doneChunk);
+    safeSend(sender, IPC_CHANNELS.LLM_STREAM_CHUNK, doneChunk);
   } catch (err) {
     log.error('LLM stream error', err as Error);
     if ((err as Error).name === 'AbortError' || currentAbortController?.signal.aborted) {
       const abortChunk: LLMStreamChunk = { done: true, content: '' };
-      sender.send(IPC_CHANNELS.LLM_STREAM_CHUNK, abortChunk);
+      safeSend(sender, IPC_CHANNELS.LLM_STREAM_CHUNK, abortChunk);
     } else {
       const errorChunk: LLMStreamChunk = {
         error: (err as Error).message || 'Unknown error',
         done: true,
       };
-      sender.send(IPC_CHANNELS.LLM_STREAM_CHUNK, errorChunk);
+      safeSend(sender, IPC_CHANNELS.LLM_STREAM_CHUNK, errorChunk);
     }
   } finally {
     currentAbortController = null;
     resetIdleTimer();
-    session.dispose?.();
+    session.dispose({ disposeSequence: true });
   }
 }
 
@@ -320,14 +345,14 @@ export function setupBuiltinLLMIPC(): void {
         resolvedModelFile,
         event.sender
       );
-      event.sender.send(IPC_CHANNELS.LLM_MODEL_STATUS, getModelStatus(resolvedModelFile));
+      safeSend(event.sender, IPC_CHANNELS.LLM_MODEL_STATUS, getModelStatus(resolvedModelFile));
     } catch (err) {
       log.error('Model download IPC handler failed', err as Error);
       const status: LLMModelStatus = {
         ...getModelStatus(resolvedModelFile),
         error: (err as Error).message,
       };
-      event.sender.send(IPC_CHANNELS.LLM_MODEL_STATUS, status);
+      safeSend(event.sender, IPC_CHANNELS.LLM_MODEL_STATUS, status);
     }
   });
 

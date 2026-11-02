@@ -1,11 +1,12 @@
 {
-  "name": "mlearn",
+  "name": "sora-study",
   "version": "2.9.11",
-  "description": "A Language-learning app that knows what you know for faster learning by immersion",
-  "main": "dist-electron/electron/main.js",
+  "description": "Sora 空: an independently modified mLearn study app with embedded mpv and manual AI prompts",
+  "main": "dist-electron/electron/customMain.js",
   "scripts": {
     "start": "npm run dev",
     "dev": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:embedded": "cross-env MLEARN_EMBEDDED_MPV=1 concurrently -k \"npm run dev:vite\" \"npm run dev:electron -- --ozone-platform=x11\"",
     "dev:vite": "vite",
     "dev:electron": "wait-on tcp:3000 && tsc -p src/electron/tsconfig.json && npm run bundle:preload && cross-env NODE_ENV=development electron .",
     "clean:dist-electron-cache": "rm -f dist-electron/dictionary_cache.sqlite3 dist-electron/anki-cache.json",
@@ -26,6 +27,7 @@
     "dist:mac": "npm run build:extension && npm run build && electron-builder --mac --universal",
     "dist:win": "npm run build && electron-builder --win",
     "dist:linux": "npm run build && electron-builder --linux",
+    "dist:linux:custom": "npm run build:extension && npm run build && electron-builder --linux AppImage --x64 --publish never",
     "dist:tar": "node scripts/pack-tar.js",
     "dev:mobile": "vite build --mode capacitor --watch",
     "build:mobile": "vite build --mode capacitor",
@@ -53,7 +55,8 @@
     "test:language-data": "node --test scripts/language-data/*.test.mjs && python3 -m unittest discover -s scripts/language-data/providers -p 'test_*.py'",
     "test:update-artifacts": "node --test scripts/verify-update-artifacts.test.mjs",
     "verify:update-artifacts": "node scripts/verify-update-artifacts.mjs release",
-    "build:extension": "rm -rf extension/dist && mkdir -p extension/dist/popup extension/dist/icons && tsc -p extension/tsconfig.json --noEmit && esbuild extension/src/content-script.ts --bundle --platform=browser --outfile=extension/dist/content-script.js --format=iife && esbuild extension/src/background.ts --bundle --platform=browser --outfile=extension/dist/background.js --format=iife && esbuild extension/src/popup/popup.ts --platform=browser --outfile=extension/dist/popup/popup.js --format=esm && cp extension/manifest.json extension/dist/manifest.json && cp extension/src/popup/popup.html extension/src/popup/popup.css extension/dist/popup/ && cp extension/icons/*.png extension/dist/icons/"
+    "build:extension": "rm -rf extension/dist && mkdir -p extension/dist/popup extension/dist/icons && tsc -p extension/tsconfig.json --noEmit && esbuild extension/src/content-script.ts --bundle --platform=browser --outfile=extension/dist/content-script.js --format=iife && esbuild extension/src/background.ts --bundle --platform=browser --outfile=extension/dist/background.js --format=iife && esbuild extension/src/popup/popup.ts --platform=browser --outfile=extension/dist/popup/popup.js --format=esm && cp extension/manifest.json extension/dist/manifest.json && cp extension/src/popup/popup.html extension/src/popup/popup.css extension/dist/popup/ && cp extension/icons/*.png extension/dist/icons/",
+    "dist:linux:standalone": "bash scripts/build-sora-standalone-linux.sh"
   },
   "keywords": [
     "language-learning",
@@ -65,7 +68,7 @@
     "srs"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
     "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^8.1.0",
@@ -114,7 +117,7 @@
     "dompurify": "3.3.1",
     "electron-updater": "^6.8.9",
     "fflate": "^0.8.3",
-    "json-canonicalize": "^2.0.0",
+    "json-canonicalize": "2.0.0",
     "jsqr": "^1.4.0",
     "marked": "^17.0.2",
     "node-llama-cpp": "^3.19.0",
@@ -124,16 +127,12 @@
     "ws": "^8.21.0"
   },
   "build": {
-    "appId": "net.kikan.mlearn",
-    "productName": "mLearn",
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "adrianvla",
-        "repo": "mLearn"
-      }
-    ],
+    "appId": "local.moo.sora",
+    "productName": "Sora 空",
+    "publish": [],
     "files": [
+      "LICENSE",
+      "README.md",
       "dist/**/*",
       "dist-electron/**/*",
       "!dist-electron/.DS_Store",
@@ -186,11 +185,11 @@
         ]
       },
       {
-        "from": "build/icon.ico",
+        "from": "build/sora.ico",
         "to": "icon.ico"
       },
       {
-        "from": "build/icons",
+        "from": "build/sora-icons",
         "to": "icons"
       },
       {
@@ -204,6 +203,20 @@
       {
         "from": "PRIVACY_POLICY.md",
         "to": "PRIVACY_POLICY.md"
+      },
+      {
+        "from": "build/standalone/env",
+        "to": "env",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "build/standalone/bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "asarUnpack": [
@@ -217,7 +230,7 @@
     ],
     "mac": {
       "category": "public.app-category.education",
-      "icon": "build/icon.icns",
+      "icon": "build/sora.icns",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "notarize": true,
@@ -225,9 +238,9 @@
       "entitlementsInherit": "build/entitlements.mac.plist",
       "protocols": [
         {
-          "name": "mLearn Auth Callback",
+          "name": "Sora Callback",
           "schemes": [
-            "mlearn"
+            "mlearn-custom"
           ]
         }
       ],
@@ -248,7 +261,7 @@
     },
     "dmg": {
       "background": "build/dmg-background.png",
-      "icon": "build/icon.icns",
+      "icon": "build/sora.icns",
       "contents": [
         {
           "x": 140,
@@ -263,12 +276,12 @@
       ]
     },
     "win": {
-      "icon": "build/icon.ico",
+      "icon": "build/sora.ico",
       "protocols": [
         {
-          "name": "mLearn Auth Callback",
+          "name": "Sora Callback",
           "schemes": [
-            "mlearn"
+            "mlearn-custom"
           ]
         }
       ],
@@ -290,13 +303,14 @@
       ]
     },
     "linux": {
-      "icon": "build/icons/",
+      "icon": "build/sora-icons/",
+      "artifactName": "Sora-${version}-${arch}.${ext}",
       "maintainer": "Adrian Vlasov <adrian@kikan.net>",
       "protocols": [
         {
-          "name": "mLearn Auth Callback",
+          "name": "Sora Callback",
           "schemes": [
-            "mlearn"
+            "mlearn-custom"
           ]
         }
       ],
@@ -325,10 +339,10 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "mLearn.Setup.${version}-${arch}.exe"
+      "artifactName": "Sora.Setup.${version}-${arch}.exe"
     },
     "portable": {
-      "artifactName": "mLearn-${version}-${arch}-portable.exe"
+      "artifactName": "Sora-${version}-${arch}-portable.exe"
     }
   }
 }

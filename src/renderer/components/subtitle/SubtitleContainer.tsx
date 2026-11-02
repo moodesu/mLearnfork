@@ -41,6 +41,9 @@ export interface SubtitleContainerProps {
   /** Video source URL (for video clip flashcards) */
   videoSrc?: string;
   lastScreenshot?: string;
+  nativeSource?: string;
+  /** Keep definitions in the study panel instead of overlapping native video. */
+  containedHover?: boolean;
 }
 
 export const SubtitleContainer: Component<SubtitleContainerProps> = (props) => {
@@ -462,6 +465,8 @@ export const SubtitleContainer: Component<SubtitleContainerProps> = (props) => {
             subtitleEnd={props.subtitleEnd}
             videoSrc={props.videoSrc}
             lastScreenshot={props.lastScreenshot}
+            nativeSource={props.nativeSource}
+            contained={props.containedHover}
           />
         ) : null}
       </Show>

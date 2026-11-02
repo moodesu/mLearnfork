@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'solid-js/web';
 import type { JSX } from 'solid-js';
+import { createSignal } from 'solid-js';
 import type { LanguageData } from '../../../shared/types';
 
 const mockLanguageData: LanguageData = {
@@ -159,6 +160,22 @@ describe('WordHover', () => {
 
   afterEach(() => {
     container.remove();
+  });
+
+  it('keeps embedded definitions in normal flow and removes their space when hidden', async () => {
+    const { WordHover } = await import('./WordHover');
+    const [visible, setVisible] = createSignal(true);
+    const dispose = render(() => <WordHover token={{ word: 'word', actual_word: 'word', type: 'word' }} word="word"
+      position={{ x: 1, y: 1 }} contained visible={visible()} />, container);
+    try {
+      const hover = container.querySelector('.word-hover-container') as HTMLElement;
+      expect(hover.classList.contains('word-hover-contained')).toBe(true);
+      expect(hover.style.position).toBe('');
+      expect(hover.style.left).toBe('');
+      expect(hover.classList.contains('word-hover-contained-hidden')).toBe(false);
+      setVisible(false);
+      expect(hover.classList.contains('word-hover-contained-hidden')).toBe(true);
+    } finally { dispose(); }
   });
 
   it('renders package-declared dictionary readings in translation entries', async () => {

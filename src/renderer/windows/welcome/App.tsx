@@ -119,9 +119,9 @@ const WelcomeContent: Component = () => {
   const [overallStatus, setOverallStatus] = createSignal(t(NOT_STARTED_KEY));
   const [networkError, setNetworkError] = createSignal<string | null>(null);
 
-  const [includeLLM, setIncludeLLM] = createSignal(true);
-  const [includeOCR, setIncludeOCR] = createSignal(true);
-  const [includeVoice, setIncludeVoice] = createSignal(true);
+  const [includeLLM, setIncludeLLM] = createSignal(false);
+  const [includeOCR, setIncludeOCR] = createSignal(false);
+  const [includeVoice, setIncludeVoice] = createSignal(false);
 
   const [selectedLanguage, setSelectedLanguage] = createSignal<string>(resolveInitialLanguageCode(settings.language, availableLanguageCodes()));
   const [selectedUILanguage, setSelectedUILanguage] = createSignal<string>(resolveInitialUILanguageCode(settings.uiLanguage, uiLanguageCodes));
@@ -169,9 +169,9 @@ const WelcomeContent: Component = () => {
     setOverallStatus(t(NOT_STARTED_KEY));
     setStatusLogs([{ message: t(CLICK_TO_BEGIN_KEY), level: 'info' }]);
     if (opts) {
-      setIncludeLLM(opts.includeLLM ?? true);
-      setIncludeOCR(opts.includeOCR ?? true);
-      setIncludeVoice(opts.includeVoice ?? true);
+      setIncludeLLM(opts.includeLLM ?? false);
+      setIncludeOCR(opts.includeOCR ?? false);
+      setIncludeVoice(opts.includeVoice ?? false);
     }
   };
 
@@ -422,9 +422,9 @@ const WelcomeContent: Component = () => {
     ipcCleanups.push(bridge.installer.onInstallStarted((opts: InstallOptions) => {
       if (!installationStarted()) {
         setInstallationStarted(true);
-        setIncludeLLM(opts.includeLLM ?? true);
-        setIncludeOCR(opts.includeOCR ?? true);
-        setIncludeVoice(opts.includeVoice ?? true);
+        setIncludeLLM(opts.includeLLM ?? false);
+        setIncludeOCR(opts.includeOCR ?? false);
+        setIncludeVoice(opts.includeVoice ?? false);
       }
     }));
 
@@ -449,8 +449,8 @@ const WelcomeContent: Component = () => {
       if (state.inProgress && !installationStarted()) {
         setInstallationStarted(true);
         if (state.options) {
-          setIncludeLLM(state.options.includeLLM ?? true);
-          setIncludeOCR(state.options.includeOCR ?? true);
+          setIncludeLLM(state.options.includeLLM ?? false);
+          setIncludeOCR(state.options.includeOCR ?? false);
         }
         return;
       }

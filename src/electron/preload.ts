@@ -24,6 +24,18 @@ function ipcOn(channel: string, handler: (...args: any[]) => void): () => void {
 }
 
 const mLearnIPC = {
+  mpvOpen: (path: string, start: number, viewport?: import('../shared/mpv').MpvViewport): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.MPV_OPEN, path, start, viewport),
+  mpvEmbeddingAvailable: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.MPV_EMBEDDING_AVAILABLE),
+  mpvSetViewport: (viewport: import('../shared/mpv').MpvViewport): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.MPV_VIEWPORT, viewport),
+  mpvClose: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.MPV_CLOSE),
+  mpvControl: (control: import('../shared/mpv').MpvControl): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.MPV_CONTROL, control),
+  mpvAddSubtitle: (path: string): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.MPV_SUBTITLE, path),
+  mpvScreenshot: (): Promise<string | null> => ipcRenderer.invoke(IPC_CHANNELS.MPV_SCREENSHOT),
+  mpvScreenshotAt: (time: number): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.MPV_SCREENSHOT_AT, time),
+  mpvTranscript: (): Promise<{ trackId: number | null; content: string }> => ipcRenderer.invoke(IPC_CHANNELS.MPV_TRANSCRIPT),
+  mpvLookupDictionary: (word: string): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.MPV_LOOKUP, word),
+  onMpvState: (callback: (state: import('../shared/mpv').MpvState) => void) =>
+    ipcOn(IPC_CHANNELS.MPV_STATE, (_event, state) => callback(state)),
   // ========== Settings ==========
   getSettings: () => ipcRenderer.send(IPC_CHANNELS.GET_SETTINGS),
   saveSettings: (settings: Settings) => ipcRenderer.send(IPC_CHANNELS.SAVE_SETTINGS, settings),

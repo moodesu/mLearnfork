@@ -19,6 +19,10 @@ vi.mock('electron', () => ({
   },
   app: {
     getVersion: vi.fn(() => '1.0.0'),
+    // Backend lifecycle unit tests exercise the legacy (non-port-probing) branch.
+    // Sora-specific port ownership is tested separately in customProfile.test.ts.
+    getName: vi.fn(() => 'mLearn'),
+    isPackaged: false,
   },
   BrowserWindow: {
     getAllWindows: () => {
@@ -177,6 +181,10 @@ const mockWriteStream = {
   destroy: vi.fn(),
   close: vi.fn(),
 };
+// Disk-space checks must be deterministic and must not depend on the CI/host disk.
+const mockStatfs = vi.hoisted(() => vi.fn((_path: string, callback: (error: Error | null, stats?: { bavail: number; bsize: number }) => void) => {
+  callback(null, { bavail: 100_000_000, bsize: 4096 });
+}));
 vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('fs')>();
   return {
@@ -184,8 +192,10 @@ vi.mock('fs', async (importOriginal) => {
     default: {
       ...actual,
       createWriteStream: vi.fn(() => mockWriteStream),
+      statfs: mockStatfs,
     },
     createWriteStream: vi.fn(() => mockWriteStream),
+    statfs: mockStatfs,
   };
 });
 

@@ -7,7 +7,7 @@ import {
 } from '../../shared/languageFeatures';
 import { getLogger } from '../../shared/utils/logger';
 import { getPipCommandCandidates, type PipCommand } from './pythonRuntimePaths';
-import { isWindows } from '../utils/platform';
+import { getPythonExecutablePath, isPackaged, isWindows } from '../utils/platform';
 
 const log = getLogger('electron.pythonRuntimeRequirements');
 
@@ -109,6 +109,48 @@ if failed:
   });
 }
 
+/** Packaged standalone Python lives in the read-only AppImage mount. */
+function verifyBundledDistributions(
+  requirements: string[],
+  callbacks?: LanguagePythonRequirementInstallCallbacks,
+): Promise<void> {
+  if (requirements.length === 0) return Promise.resolve();
+  emitStatus(callbacks, `Checking bundled language Python packages: ${requirements.join(', ')}`);
+  const script = `
+import importlib.metadata
+import json
+import re
+import sys
+
+missing = []
+for requirement in json.loads(sys.argv[1]):
+    match = re.match(r'^[A-Za-z0-9][A-Za-z0-9._-]*', requirement.strip())
+    if not match:
+        missing.append(requirement)
+        continue
+    package_name = match.group(0)
+    try:
+        importlib.metadata.version(package_name)
+    except importlib.metadata.PackageNotFoundError:
+        missing.append(requirement)
+
+if missing:
+    print('Missing bundled language packages: ' + ', '.join(missing))
+    raise SystemExit(1)
+`.trim();
+  return new Promise((resolve, reject) => {
+    const process = spawn(getPythonExecutablePath(), ['-c', script, JSON.stringify(requirements)]);
+    let output = '';
+    process.stdout?.on('data', (data) => { output += data.toString(); });
+    process.stderr?.on('data', (data) => { output += data.toString(); });
+    process.on('error', reject);
+    process.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Standalone AppImage has missing language dependencies. ${output.trim()} Rebuild with these packages bundled; pip cannot write to the AppImage.`));
+    });
+  });
+}
+
 export async function ensureLanguagePythonRequirementsInstalled(
   language: string,
   langData: LanguageDataMap,
@@ -118,9 +160,25 @@ export async function ensureLanguagePythonRequirementsInstalled(
   const data = langData[language];
   if (!data) return;
 
-  const requirements = getLanguagePythonRequirementsForInstall({ [language]: data }, options);
-  const importChecks = getLanguagePythonImportChecksForInstall({ [language]: data }, options);
+  // The standalone AppImage bundles Japanese core packages only. Its runtime
+  // is read-only, so optional ML components require a separate future build.
+  const standalone = isPackaged && process.env.SORA_STANDALONE === '1';
+  const effectiveOptions = standalone
+    ? { ...options, includeLLM: false, includeOCR: false, includeVoice: false }
+    : options;
+  const requirements = getLanguagePythonRequirementsForInstall({ [language]: data }, effectiveOptions);
+  const importChecks = getLanguagePythonImportChecksForInstall({ [language]: data }, effectiveOptions);
   if (requirements.length === 0 && importChecks.length === 0) return;
+
+  if (standalone) {
+    await verifyBundledDistributions(requirements, callbacks);
+    await verifyImportChecks({
+      command: getPythonExecutablePath(),
+      argsPrefix: [],
+      cwd: path.dirname(path.dirname(getPythonExecutablePath())),
+    }, importChecks, callbacks);
+    return;
+  }
 
   const [pipCommand] = getPipCommandCandidates();
   if (!pipCommand) {

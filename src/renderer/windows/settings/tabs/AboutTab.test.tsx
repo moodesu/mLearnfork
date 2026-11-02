@@ -103,117 +103,23 @@ describe('AboutTab updates', () => {
     container.remove();
   });
 
-  it('offers manual checks and persists the automatic-download preference', async () => {
+  it('shows fork attribution and manual-update information without updater controls', async () => {
     const { AboutTab } = await import('./AboutTab');
     const dispose = render(() => <AboutTab />, container);
     await Promise.resolve();
-
-    (container.querySelector('[data-toggle="automatic-updates"]') as HTMLButtonElement).click();
-    expect(updateSettingMock).toHaveBeenCalledWith('automaticallyDownloadUpdates', false);
-
-    const checkButton = Array.from(container.querySelectorAll('button'))
-      .find((button) => button.textContent?.includes('mlearn.About.Updates.Check'));
-    checkButton?.click();
-    expect(checkForUpdatesMock).toHaveBeenCalledWith(false);
-    dispose();
-  });
-
-  it('shows download progress and restarts only after the update is ready', async () => {
-    const { AboutTab } = await import('./AboutTab');
-    const dispose = render(() => <AboutTab />, container);
-    await Promise.resolve();
-
-    updateListener?.({
-      status: 'downloading',
-      currentVersion: '2.6.7',
-      availableVersion: '2.7.0',
-      canAutoUpdate: true,
-      supportReason: null,
-      updatedAt: 2,
-      update: { version: '2.7.0', source: 'native' },
-      progress: { percent: 42, bytesPerSecond: 100, transferred: 42, total: 100 },
-    });
-    expect(container.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')).toBe('42');
-
-    const downloadedState: AppUpdateState = {
-      status: 'downloaded',
-      currentVersion: '2.6.7',
-      availableVersion: '2.7.0',
-      canAutoUpdate: true,
-      supportReason: null,
-      updatedAt: 3,
-      update: { version: '2.7.0', source: 'native' },
-    };
-    installUpdateMock.mockResolvedValue(downloadedState);
-    updateListener?.(downloadedState);
-
-    const restartButton = Array.from(container.querySelectorAll('button'))
-      .find((button) => button.textContent?.includes('mlearn.About.Updates.Restart'));
-    restartButton?.click();
-    expect(installUpdateMock).toHaveBeenCalledOnce();
-    dispose();
-  });
-
-  it('does not let a stale initial snapshot overwrite a newer update event', async () => {
-    let resolveInitialState!: (state: AppUpdateState) => void;
-    getUpdateStateMock.mockReturnValue(new Promise<AppUpdateState>((resolve) => {
-      resolveInitialState = resolve;
-    }));
-    const { AboutTab } = await import('./AboutTab');
-    const dispose = render(() => <AboutTab />, container);
-    await Promise.resolve();
-
-    updateListener?.({
-      status: 'available',
-      currentVersion: '2.6.7',
-      availableVersion: '2.7.0',
-      canAutoUpdate: true,
-      supportReason: null,
-      updatedAt: 3,
-      update: { version: '2.7.0', source: 'native' },
-    });
-    resolveInitialState(initialState);
-    await Promise.resolve();
-
-    expect(container.textContent).toContain('mlearn.About.Updates.Available 2.7.0');
-    dispose();
-  });
-
-  it('sends unsupported installations to the secure download page', async () => {
-    initialState = {
-      status: 'available',
-      currentVersion: '2.6.7',
-      availableVersion: '2.7.0',
-      canAutoUpdate: false,
-      supportReason: 'linux-non-appimage',
-      updatedAt: 1,
-      update: {
-        version: '2.7.0',
-        source: 'metadata',
-        manualDownloadUrl: 'https://mlearn.kikan.net/download/auto/',
-      },
-    };
-
-    const { AboutTab } = await import('./AboutTab');
-    const dispose = render(() => <AboutTab />, container);
-    await Promise.resolve();
-
-    const downloadPageButton = Array.from(container.querySelectorAll('button'))
-      .find((button) => button.textContent?.includes('mlearn.About.Updates.DownloadPage'));
-    downloadPageButton?.click();
-    expect(openExternalUrlMock).toHaveBeenCalledWith('https://mlearn.kikan.net/download/auto/');
-    dispose();
-  });
-
-  it('keeps desktop updater controls out of the mobile About view', async () => {
-    electronPlatform = false;
-    const { AboutTab } = await import('./AboutTab');
-    const dispose = render(() => <AboutTab />, container);
-    await Promise.resolve();
-
+    expect(container.textContent).toContain('mlearn.About.SoraAttribution');
+    expect(container.textContent).toContain('mlearn.About.SoraUpdates');
     expect(container.textContent).not.toContain('mlearn.About.Updates.Title');
     expect(getUpdateStateMock).not.toHaveBeenCalled();
     expect(updateListener).toBeUndefined();
+    dispose();
+  });
+
+  it('keeps the upstream credit link accessible', async () => {
+    const { AboutTab } = await import('./AboutTab');
+    const dispose = render(() => <AboutTab />, container);
+    Array.from(container.querySelectorAll('button')).find((button) => button.textContent === 'mlearn.About.SoraUpstream')?.click();
+    expect(openExternalUrlMock).toHaveBeenCalledWith('https://github.com/adrianvla/mLearn');
     dispose();
   });
 });

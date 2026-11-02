@@ -94,6 +94,19 @@ body.hide-cursor .video-route > .video-nav > button {
   min-height: 0;
 }
 
+/* Native study mode must remain usable in a narrow, side-by-side window. */
+.video-route.native-study > .video-nav {
+  position: relative;
+  top: auto;
+  left: auto;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.5rem 1rem;
+}
+.video-route.native-study > .video-nav label { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.video-route.native-study .video-player-container { overflow-y: auto; }
+.video-route.native-study .mpv-player { padding-top: 0.5rem; }
+
 .video-word-sidebar-backdrop {
   display: none;
 }

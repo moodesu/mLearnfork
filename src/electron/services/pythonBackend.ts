@@ -12,6 +12,7 @@ import { spawn, exec, execSync, ChildProcess } from 'child_process';
 import { ipcMain, app, BrowserWindow } from 'electron';
 import * as tar from 'tar';
 import { IPC_CHANNELS, PYTHON_BACKEND_PORT, DEFAULT_RUNTIME_CATALOG_URL, LOG_PATTERN_PREFIX, LOG_PATTERN_VERSION } from '../../shared/constants';
+import { CUSTOM_APP_NAME, assertPortAvailable } from './customProfile';
 import type { InstallOptions, InstallerState, PipRequirementsConfig, PipProgress, RuntimeCatalog, RuntimeCatalogEntry } from '../../shared/types';
 import { DEFAULT_SETTINGS } from '../../shared/types';
 import {
@@ -317,16 +318,14 @@ function resolveExternalResourceFilePath(...segments: string[]): string {
 }
 
 function resolvePythonExecutablePath(): string {
+  if (app.isPackaged && process.env.SORA_STANDALONE === '1') {
+    return getPythonExecutablePath();
+  }
   if (selectedPythonExecutablePath && fs.existsSync(selectedPythonExecutablePath)) {
     return selectedPythonExecutablePath;
   }
-  if (isWindows) {
-    const userDataExe = getUserDataPythonExecutablePath();
-    if (fs.existsSync(userDataExe)) return userDataExe;
-  } else {
-    const userDataPy = getUserDataPythonExecutablePath();
-    if (fs.existsSync(userDataPy)) return userDataPy;
-  }
+  const userDataPy = getUserDataPythonExecutablePath();
+  if (fs.existsSync(userDataPy)) return userDataPy;
   return getPythonExecutablePath();
 }
 
@@ -814,7 +813,8 @@ async function pythonFound(): Promise<boolean> {
 
   log.info('Python found, starting backend...');
 
-  killProcessesOnPort(PYTHON_BACKEND_PORT);
+  if (app.getName() === CUSTOM_APP_NAME) await assertPortAvailable(PYTHON_BACKEND_PORT);
+  else killProcessesOnPort(PYTHON_BACKEND_PORT);
 
   if (isFirstTimeSetup) return false;
 
@@ -1181,7 +1181,9 @@ export async function findPython(): Promise<boolean> {
         // Install pip packages for any components enabled since the last install.
         // Non-fatal: the backend still starts if this fails.
         try {
-          await reconcileComponentPackages();
+          if (!(app.isPackaged && process.env.SORA_STANDALONE === '1')) {
+            await reconcileComponentPackages();
+          }
         } catch (e) {
           log.warn('Component package reconciliation failed:', e);
         }

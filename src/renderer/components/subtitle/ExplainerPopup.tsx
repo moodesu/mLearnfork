@@ -5,16 +5,17 @@
  */
 
 import { Component, Show, createSignal, createEffect, createMemo, onCleanup, untrack } from 'solid-js';
+import { getBridge } from '../../../shared/bridges';
 import type { LLMToolCall } from '../../../shared/types';
-import { Button, DraggablePopup, IconBtn } from '../common';
+import { Button, DraggablePopup, IconBtn, Textarea } from '../common';
 import { RefreshIcon, BotIcon } from '../common/Misc/Icons';
 import { useSettings, useLocalization, useLanguage, useLowPowerGate } from '../../context';
-import { streamExplanation, getCachedExplanation, requiresSetup, type ExplainerMode } from '../../services/llmProvider';
+import { buildManualExplanationPrompt, parseManualExplanationResponse, streamExplanation, getCachedExplanation, requiresSetup, type ExplainerMode } from '../../services/llmProvider';
 import { CloudSessionCancelledError, CloudUnreachableError } from '../../services/cloudSessionManager';
-import type { ParsedExplainer, ExplainerSection, GrammarPoint } from './ExplainerCards';
+import type { ParsedExplainer } from './ExplainerCards';
 import { ExplainerCards } from './ExplainerCards';
 import { buildExplainerGeneratedByLabel } from './explainerProviderLabel';
-import { hasExplainerGenerationOutput, isQuotaError, normalizeExplainerErrorMessage } from './explainerPopupState';
+import { toolCallsToParsedExplainer, hasExplainerGenerationOutput, isQuotaError, normalizeExplainerErrorMessage } from './explainerPopupState';
 import { Spinner } from '../common';
 import './ExplainerPopup.css';
 import { getLogger } from '../../../shared/utils/logger';
@@ -37,49 +38,6 @@ export interface ExplainerPopupProps {
 }
 
 /**
- * Convert accumulated tool calls into the ParsedExplainer shape
- * that ExplainerCards already understands.
- */
-function toolCallsToParsedExplainer(toolCalls: LLMToolCall[], rawText: string): ParsedExplainer {
-  const sections: ExplainerSection[] = [];
-  const latestByName = new Map<string, LLMToolCall>();
-
-  for (const toolCall of toolCalls) {
-    latestByName.set(toolCall.name, toolCall);
-  }
-
-  const translationCall = latestByName.get('show_translation');
-  if (translationCall) {
-    const args = translationCall.arguments as Record<string, unknown>;
-    sections.push({
-      type: 'translation',
-      content: (args.translation as string) ?? '',
-    });
-  }
-
-  const explanationCall = latestByName.get('show_explanation');
-  if (explanationCall) {
-    const args = explanationCall.arguments as Record<string, unknown>;
-    sections.push({
-      type: 'explanation',
-      word: args.word as string | undefined,
-      content: (args.explanation as string) ?? '',
-    });
-  }
-
-  const grammarCall = latestByName.get('show_grammar_points');
-  if (grammarCall) {
-    const args = grammarCall.arguments as Record<string, unknown>;
-    sections.push({
-      type: 'grammar',
-      grammarPoints: (args.points as GrammarPoint[]) ?? [],
-    });
-  }
-
-  return { sections, rawText: rawText || undefined };
-}
-
-/**
  * ExplainerPopup - Streaming LLM explanation popup with raw mode toggle
  */
 export const ExplainerPopup: Component<ExplainerPopupProps> = (props) => {
@@ -89,6 +47,27 @@ export const ExplainerPopup: Component<ExplainerPopupProps> = (props) => {
   const { requestAccess } = useLowPowerGate();
   const explainerMode = createMemo<ExplainerMode>(() => props.mode ?? 'word');
   let activeStreamRequestId = 0;
+  const [manualResponse, setManualResponse] = createSignal('');
+  const [manualError, setManualError] = createSignal('');
+  const [promptCopied, setPromptCopied] = createSignal(false);
+  const manualPrompt = createMemo(() => buildManualExplanationPrompt(props.word, props.contextPhrase, settings.language, {
+    mode: explainerMode(), languageData: currentLangData(),
+  }));
+  const copyManualPrompt = () => {
+    getBridge().files.writeToClipboard(manualPrompt());
+    setPromptCopied(true);
+  };
+  const importManualResponse = () => {
+    const calls = parseManualExplanationResponse(manualResponse(), props.word, explainerMode());
+    if (!calls) {
+      setManualError(t('mlearn.AI.Manual.InvalidResponse'));
+      return;
+    }
+    setManualError('');
+    setToolCalls(calls);
+    setRawText('');
+    setIsComplete(true);
+  };
 
   // State
   const [rawText, setRawText] = createSignal('');
@@ -112,7 +91,7 @@ export const ExplainerPopup: Component<ExplainerPopupProps> = (props) => {
     const calls = toolCalls();
     const text = rawText();
     if (calls.length === 0 && !text) return { sections: [] };
-    return toolCallsToParsedExplainer(calls, text);
+    return toolCallsToParsedExplainer(calls, text, t);
   });
 
   const hasContent = createMemo(() => {
@@ -133,6 +112,7 @@ export const ExplainerPopup: Component<ExplainerPopupProps> = (props) => {
   // becoming dependencies of this effect (which would cause re-triggers on
   // settings changes, restarting the stream and appearing to freeze).
   createEffect(() => {
+    settings.llmProvider;
     if (props.isOpen && props.contextPhrase && (explainerMode() === 'phrase' || props.word)) {
       untrack(() => { startStreaming(); });
     }
@@ -172,6 +152,13 @@ export const ExplainerPopup: Component<ExplainerPopupProps> = (props) => {
     setIsComplete(false);
     setError(null);
     setErrorKind(null);
+    setManualResponse('');
+    setManualError('');
+    setPromptCopied(false);
+    if (settings.llmProvider === 'manual') {
+      setIsLoading(false);
+      return;
+    }
 
     // Snapshot reactive settings values so reads below don't leak into any
     // outer tracking context (the calling createEffect uses untrack, but
@@ -252,6 +239,7 @@ export const ExplainerPopup: Component<ExplainerPopupProps> = (props) => {
               return;
             }
 
+            setToolCalls(allToolCalls);
             setRawText(finalContent);
             setIsLoading(false);
             setIsComplete(true);
@@ -363,6 +351,17 @@ export const ExplainerPopup: Component<ExplainerPopupProps> = (props) => {
       }
     >
       <div class="explainer-popup__body">
+        <Show when={settings.llmProvider === 'manual'}>
+          <div class="explainer-manual-controls">
+            <p>{t('mlearn.AI.Manual.Instructions')}</p>
+            <Textarea value={manualPrompt()} readOnly rows={5} aria-label={t('mlearn.AI.Manual.Prompt')} />
+            <Button onClick={copyManualPrompt}>{t(promptCopied() ? 'mlearn.AI.Manual.Copied' : 'mlearn.AI.Manual.CopyPrompt')}</Button>
+            <Textarea value={manualResponse()} onInput={(event) => setManualResponse(event.currentTarget.value)} rows={5}
+              placeholder={t('mlearn.AI.Manual.PastePlaceholder')} aria-label={t('mlearn.AI.Manual.Response')} />
+            <Button onClick={importManualResponse} disabled={!manualResponse().trim()}>{t('mlearn.AI.Manual.ShowResponse')}</Button>
+            <Show when={manualError()}><p role="alert">{manualError()}</p></Show>
+          </div>
+        </Show>
         {/* Loading state (initial) */}
         <Show when={isLoading() && !hasContent()}>
           <div class="explainer-popup__loading">
