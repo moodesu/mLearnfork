@@ -2342,34 +2342,38 @@ export const ReaderRoute: Component = () => {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && magnifierActive()) {
+        e.preventDefault();
+        setMagnifierActive(false);
+        return;
+      }
+      // Typing in search, notes, or editable text must not activate the lens.
+      const target = e.target;
+      if (e.isComposing || (target instanceof HTMLElement && (
+        target.isContentEditable || target.closest('input, textarea, select, [role="textbox"]')
+      ))) return;
+
       if (e.key === 'ArrowLeft') prevPage();
       if (e.key === 'ArrowRight') nextPage();
       if (e.key === 'o' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         runOcr();
       }
-      // Magnifier hotkey (press and hold)
-      // Access settings directly for reactivity
+      // Toggle once per key press; key release leaves the lens active for trackpads.
       if (matchesHotkey(e) && !e.repeat) {
-        setMagnifierActive(true);
-        // Hide all word hovers when magnifying glass is activated
-        getGlobalHoverManager().forceHide();
+        e.preventDefault();
+        const nextActive = !magnifierActive();
+        setMagnifierActive(nextActive);
+        if (nextActive) getGlobalHoverManager().forceHide();
       }
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      // Release magnifier when hotkey is released
-      // Access settings directly for reactivity
-      if (matchesHotkey(e)) {
-        setMagnifierActive(false);
-      }
-    };
-
+    const handleWindowBlur = () => setMagnifierActive(false);
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleWindowBlur);
     onCleanup(() => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleWindowBlur);
     });
   });
 
