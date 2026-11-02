@@ -56,6 +56,19 @@
   overflow: visible;
 }
 
+/* OCR text is an invisible lookup layer over image pages. Do not redraw it on
+   hover: approximate OCR boxes/font sizing can otherwise spill duplicated text
+   across the original artwork. Keep word hit targets, highlights, and debug text. */
+.ocr-overlay .ocr-box:not(.debug-text) {
+  background-color: transparent;
+  color: transparent;
+}
+
+.ocr-overlay .ocr-box:not(.debug-text) .ocr-text {
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
 /* Vertical text - no wrap, proper reading order */
 .ocr-text.vertical {
   writing-mode: vertical-rl;
